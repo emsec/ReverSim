@@ -11,6 +11,8 @@ ENV GAME_GIT_HASH=$GAME_GIT_HASH
 ARG GAME_GIT_HASH_SHORT
 ENV GAME_GIT_HASH_SHORT=$GAME_GIT_HASH_SHORT
 
+ARG PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
+
 # Labels as per:
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
 MAINTAINER Max Planck Institute for Security and Privacy
@@ -51,6 +53,10 @@ ENV REVERSIM_INSTANCE="/usr/var/reversim-instance"
 WORKDIR /usr/var/reversim-instance
 COPY examples/conf conf
 COPY instance/conf conf
+
+# Setup for Prometheus multiprocessing
+WORKDIR ${PROMETHEUS_MULTIPROC_DIR}
+ENV PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR}
 
 # Create empty statistics folders
 WORKDIR /usr/var/reversim-instance/statistics/LogFiles

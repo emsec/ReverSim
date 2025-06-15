@@ -166,7 +166,7 @@ class ReverSimDatabase:
 			if currentRevID != latestRevID:
 				logging.error('-------------------------------------------------')
 				logging.error(f' The database is out of date: {currentRevID} -> {latestRevID}, "{latestVersion[0].doc}"!')
-				logging.error(f' Please read "doc/Database.md" to learn how you can upgrade!')
+				logging.error(' Please read "doc/Database.md" to learn how you can upgrade!')
 				logging.error('-------------------------------------------------')
 			else:
 				logging.info(f"Current Alembic DB version: {currentRevID}, {currentVersion[0].doc}.")

@@ -42,7 +42,7 @@
 	// Syntax highlighting for Jinja templates
 	"files.associations": {
 		"**/templates/*.html": "jinja",
-		"**/logFile_*.txt": "log"
+		"**/logFile_*.txt": "log",
 	},
 
 	// Try to guess the Encoding of the games level files and languageDict
@@ -66,6 +66,8 @@
 		"editor.wordWrap": "bounded",
 		"editor.wordWrapColumn": 120
 	},
+
+	"ruff.lineLength": 90, // 90ish, same as the first rule in the editor
 
 	// Defaults for Overtype (the EINFG key in german)
 	"overtype.perEditor": false,
@@ -129,6 +131,7 @@
 		"getpid",
 		"gnds",
 		"graphviz",
+		"gunicorn",
 		"handdrawn",
 		"hardmode",
 		"highscore",
@@ -157,6 +160,7 @@
 		"levelname",
 		"limesurvey",
 		"linestretch",
+		"livesum",
 		"localtime",
 		"logfile",
 		"logfiles",
@@ -166,7 +170,9 @@
 		"millis",
 		"MITM",
 		"monobackgroundcolor",
+		"mostrecent",
 		"Multiport",
+		"MULTIPROC",
 		"netlist",
 		"netlists",
 		"nmbr",

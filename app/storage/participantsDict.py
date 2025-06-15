@@ -10,7 +10,7 @@ from app.model.GroupStats import GroupStats
 from app.model.Participant import Participant
 from app.storage.database import db
 from app.model.LogEvents import GameOverEvent
-from app.utilsGame import EventType
+from app.utilsGame import EventType, now
 
 
 def insertParticipant(participant: Participant):
@@ -40,7 +40,7 @@ def get(pseudonym: str) -> Participant:
 	"""
 	try:
 		return db.session.get_one(Participant, pseudonym)
-	except NoResultFound as e:
+	except NoResultFound:
 		raise ValueError("No participant with pseudonym/ui \"" + pseudonym + "\"found.")
 
 
@@ -72,3 +72,20 @@ def increaseGroupCounter(participant: Participant, timeStamp: str) -> None:
 def generatePseudonym(srcIP: str) -> str:
 	inputHash = datetime.now().strftime("%H:%M:%S") + srcIP + secrets.token_hex(128)
 	return hashlib.blake2b(inputHash.encode(), digest_size=int(gameConfig.PSEUDONYM_LENGTH/2)).hexdigest()
+
+
+def getConnectedPlayers() -> int:
+	"""Get the number of players currently connected
+	
+	Count all players, that reached out to the /testConnection endpoint within the last 
+	`BACK_ONLINE_THRESHOLD_S` seconds (5 seconds).
+	"""
+	# All lastConnection timestamps greater than this are considered connected
+	lastConsideredOnline = now() - gameConfig.BACK_ONLINE_THRESHOLD_S*1000 # [ms]
+
+	playersConnected = (db.session.query(Participant)
+		.filter(Participant.lastConnection > lastConsideredOnline)
+		.count()
+	)
+
+	return playersConnected

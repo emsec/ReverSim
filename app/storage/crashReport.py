@@ -4,7 +4,7 @@ from typing import Optional
 from prometheus_client import Gauge
 
 from app.config import MAX_ERROR_LOGS_PER_PLAYER, PSEUDONYM_LENGTH
-from app.storage.participantsDict import existsInMemory
+from app.storage.participantsDict import exists
 from app.utilsGame import now
 
 crashMetric: Optional[Gauge] = None
@@ -48,7 +48,7 @@ def writeCrashReport(pseudonym: str, group: str, timestamp: int, message: str, s
 	san_trace = stackTrace.splitlines(keepends=False)
 
 	# reject if pseudonym is unknown
-	if not existsInMemory(san_pseudonym):
+	if not exists(san_pseudonym):
 		return False
 	
 	# reject, if the player threw too many errors
@@ -98,5 +98,5 @@ def updateCrashMetrics():
 	try: 
 		if crashMetric is not None:
 			crashMetric.inc() # Increment the `reversim_client_errors` metric
-	except:
+	except Exception:
 		pass

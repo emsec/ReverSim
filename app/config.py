@@ -24,6 +24,14 @@ TIME_DRIFT_THRESHOLD = 200 # ms
 STALE_LOGFILE_TIME = 48 * 60 * 60 # close logfiles after 48h
 MAX_ERROR_LOGS_PER_PLAYER = 25
 
+# Number of seconds, after which the player is considered disconnected. A "Back Online"
+# message will be printed to the log, if the player connects afterwards. Also used for the
+# Prometheus Online Player Count metric
+BACK_ONLINE_THRESHOLD_S = 5.0 # [s]
+
+# The interval at which prometheus metrics without an event source shall be updated
+METRIC_UPDATE_INTERVAL = 1 # [s]
+
 # NOTE: This is used when the client needs to request assets from the server. If you need
 # the server side asset folder, use gameConfig.getAssetPath()
 REVERSIM_STATIC_URL = "/assets"
