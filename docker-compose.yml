@@ -25,11 +25,11 @@ services:
   # the container will be named reversim_game when launched
   game:
     # adjust this, if you wan't to pull a different version/tag of the game
-    image: ghcr.io/emsec/reversim:latest
+    image: ghcr.io/emsec/reversim:${REVERSIM_TAG:-latest}
     restart: unless-stopped
 
     ports:
-      - "8000:8000" # outside:inside container
+      - "${REVERSIM_PORT:-8000}:8000" # outside:inside container
     
     # mount your volumes here
     volumes:

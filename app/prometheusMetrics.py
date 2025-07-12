@@ -37,7 +37,7 @@ class ServerMetrics:
 	metrics = __prometheusFactory()
 
 	# ReverSim Prometheus Metrics
-	#met_openLogs = metrics.info("reversim_logfile_count", "The number of open logfiles") # type: ignore
+	#met_openLogs = Gauge("reversim_logfile_count", "The number of open logfiles") # type: ignore
 
 	met_playersConnected = Gauge(
 		'reversim_player_count',

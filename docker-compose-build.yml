@@ -91,6 +91,11 @@ services:
     configs:
       - source: grafana_datasources.yml
         target: /etc/grafana/provisioning/datasources/automatic.yml
+      - source: grafana_dashboard.yml
+        target: /etc/grafana/provisioning/dashboards/reversim.yml
+      - source: grafana_dashboard_essentials
+        target: /var/lib/grafana/dashboards/grafana-dashboard.json
+      
     profiles:
       - grafana
 
@@ -114,3 +119,21 @@ configs:
           type: prometheus
           url: http://prometheus:9090
           editable: true
+
+  grafana_dashboard_essentials:
+    file: examples/grafana-dashboard-provisioned.json
+
+  grafana_dashboard.yml:
+    content: |
+      apiVersion: 1
+
+      providers:
+        - name: 'ReverSim'
+          orgId: 1
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          # Provisioned Dashboards will override your changes, therefore we disable it
+          allowUiUpdates: false
+          options:
+            path: /var/lib/grafana/dashboards/grafana-dashboard.json
