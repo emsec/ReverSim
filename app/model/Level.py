@@ -189,6 +189,7 @@ class Level(db.Model, TimerMixin):
 		else:
 			return safe_join(gameConfig.getAssetPath(), LEVEL_BASE_FOLDER)
 
+
 KEY_CAMOUFLAGE = 'camouflage'
 KEY_COVERT = 'covert'
 

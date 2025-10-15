@@ -61,7 +61,7 @@ def createCrashReporter(app: Flask):
 		openCrashReporterFile(
 			crashReporterFilePath,
 			gameConfig.getGroupsDisabledErrorLogging(),
-			ServerMetrics.met_clientErrors,
+			ServerMetrics.met_clientErrors, # type: ignore
 			errorLevel=gameConfig.getInt('crashReportLevel')
 		)
 

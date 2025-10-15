@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 import os
 import subprocess
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional
 from markupsafe import escape
 
 import werkzeug.security as ws
@@ -53,7 +53,7 @@ def sanitizeString(unsafeText: Any) -> str:
 
 def sanitizeString2(unsafeText: Optional[str]) -> Optional[str]:
 	"""Same as `sanitizeString()`, but will pass trough None without converting it to a string."""
-	if unsafeText == None:
+	if unsafeText is None:
 		return None
 	return sanitizeString(unsafeText)
 
@@ -71,7 +71,8 @@ def get_git_revision_hash(shortHash: bool = False) -> str:
 		
 		# Try to determine the commit hash with a command
 		git_hash_command = subprocess.check_output(git_command).decode('ascii').strip()
-		if not git_hash_command.isalnum(): raise Exception("Git command returned invalid output")
+		if not git_hash_command.isalnum():
+			raise Exception("Git command returned invalid output")
 		return git_hash_command
 	except Exception:
 		return "Unknown"

@@ -309,6 +309,14 @@ def getGroupsDisabledErrorLogging() -> list[str]:
 		]
 
 
+def getLevelList(name: str):
+	"""Get a level list in the new format"""
+	try:
+		return __configStorage['levels'][name]
+	except KeyError:
+		raise GroupNotFound("Could not find the level list with name '" + name + "'!")
+	
+
 #########################
 #   Phase Constants     #
 #########################
@@ -337,18 +345,18 @@ ALL_LEVEL_TYPES: dict[str, str] = {
 # NOTE Special case: 'text' is written in the level list, but 'info' is send to the server, 
 # see doc/Overview.md#levels-info-screens-etc
 REMAP_LEVEL_TYPES = {
-	'text': 'info'
+	'text': LevelType.INFO
 }
 
 # The new types for the Alternative Task shall also be treated as levels aka tasks
-LEVEL_FILETYPES_WITH_TASK = ['level', 'url', 'iframe']
+LEVEL_FILETYPES_WITH_TASK = [LevelType.LEVEL, LevelType.URL, LevelType.IFRAME]
 
 LEVEL_BASE_FOLDER = 'levels'
-LEVEL_FILE_PATHS = {
-	'level': 		LEVEL_BASE_FOLDER + '/differentComplexityLevels/',
-	'info': 		LEVEL_BASE_FOLDER + '/infoPanel/',
-	'tutorial': 	LEVEL_BASE_FOLDER + '/elementIntroduction/',
-	'special': 		LEVEL_BASE_FOLDER + '/special/'
+LEVEL_FILE_PATHS: dict[str, str] = {
+	LevelType.LEVEL: 		LEVEL_BASE_FOLDER + '/differentComplexityLevels/',
+	LevelType.INFO: 		LEVEL_BASE_FOLDER + '/infoPanel/',
+	LevelType.TUTORIAL: 	LEVEL_BASE_FOLDER + '/elementIntroduction/',
+	LevelType.SPECIAL: 		LEVEL_BASE_FOLDER + '/special/'
 }
 
 # config name for the pause timer

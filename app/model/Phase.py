@@ -1,39 +1,23 @@
-import random
-import re
-import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import ( 
+from sqlalchemy.orm import (
 	Mapped,
 	mapped_column,
-	reconstructor, # type: ignore
+	reconstructor,  # type: ignore
 	relationship,
 )
 
-from app.config import LEVEL_ENCODING, PHASES_WITH_LEVELS
-from app.model.Level import (
-	ALL_LEVEL_TYPES,
-	KEY_CAMOUFLAGE,
-	KEY_COVERT,
-	CachedLevel,
-	Level,
-)
+from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
+from app.model.Level import Level
+from app.model.LevelLoader.TextFileLevelLoader import TextFileLevelLoader
 from app.model.LogEvents import ChronoEvent
 from app.model.TimerMixin import TimerMixin
 from app.model.TutorialStatus import TutorialStatus
 from app.storage.database import LEN_PHASE, db
 from app.storage.modelFormatError import ModelFormatError
 from app.storage.ParticipantLogger import ParticipantLogger
-from app.utilsGame import (
-	ClientTime,
-	LevelType,
-	PhaseType,
-	getFileLines,
-	getShortPseudo,
-	now,
-	safe_join,
-)
+from app.utilsGame import ClientTime, LevelType, PhaseType, getShortPseudo, now
 
 if TYPE_CHECKING:
 	from app.model.Participant import Participant
@@ -112,12 +96,12 @@ class Phase(db.Model, TimerMixin):
 		# Special case: Alternative Task
 		if self.name == PhaseType.AltTask and 'url' in config:
 			# Fallback to the old system, if an url is specified.
-			type = 'iframe' if config.get('iframe', False) else 'url'
+			type = LevelType.IFRAME if config.get('iframe', False) else LevelType.URL
 			self.appendLevel(Level(type, config['url']))
 
 		# Special case: Level Editor
 		elif self.name == PhaseType.Editor:
-			self.appendLevel(Level('localLevel', 'level_editor_play'))
+			self.appendLevel(Level(LevelType.LOCAL_LEVEL, 'level_editor_play'))
 
 		# Proceed as usual with the level loading
 		else:
@@ -125,17 +109,13 @@ class Phase(db.Model, TimerMixin):
 			if 'levels' not in config:
 				raise ModelFormatError("No levels defined for Phase " + self.name + "!")
 
-			# if the levels list is an array, append all file names, otherwise only append the single file name
-			levelListFiles: list[str] = []
-			if isinstance(config['levels'], str):
-				levelListFiles.append(config['levels'])
-			else:
-				levelListFiles.extend(config['levels'])
+			self.levels = TextFileLevelLoader(
+				phaseName=self.name, phaseConfig=config, tutorialStatus=tutorialStatus
+			).loadLevels()
 
-			for lf in levelListFiles:
-				shuffle = config.get('shuffle', False) # true | false
-				thinkaloud = config.get('thinkaloud', 'no') # "concurrent" | "retrospective" | "no"
-				self.__readLevelList(lf, self.name, thinkaloud, shuffle, tutorialStatus)
+		# Update the tasks counter
+		self.numTasks = sum(1 for lvl in self.levels if lvl.type in LEVEL_FILETYPES_WITH_TASK)
+		self.tasksRemaining = self.numTasks
 
 		# Persist all levels into the DB and force flush, otherwise default params are not initialized
 		db.session.add_all(self.levels)
@@ -274,7 +254,7 @@ class Phase(db.Model, TimerMixin):
 		}
 		# "difficulty weighted points over time for first-attempt correct solution" metric
 		score = 0
-		for level in filter(lambda l: l.isTask() and l.confirmClicks == 1 and l.solved, self.levels):
+		for level in filter(lambda lvl: lvl.isTask() and lvl.confirmClicks == 1 and lvl.solved, self.levels):
 			dir = level.fileName.split("/", 1)[0]
 			points = point_map.get(dir, 0)
 			time = level.getTimeSpend()/1000
@@ -285,103 +265,6 @@ class Phase(db.Model, TimerMixin):
 	
 	def hasLevels(self) -> bool:
 		return self.name in PHASES_WITH_LEVELS
-
-
-	def __readLevelList(self, fileName: str, phaseName: str, thinkaloud: str, shuffle: bool, tutorialStatus: Dict[str, TutorialStatus]) -> None:
-		"""Utility function used by loadLevels(), read a level list and add all levels to the que"""
-		# get file content for the group the participant is in
-		fileContent = getFileLines(Level.getBasePath('levelList'), fileName, encoding=LEVEL_ENCODING)
-		fileTypes: list[str] = []
-		levelFileNames: list[str] = [] # These might get shuffled if enabled in the config
-		infoPanelFileNames: list[str] = [] # These will not be shuffled
-
-		# fill arrays
-		for fileData in fileContent:
-			type, name = fileData
-			
-			# Append Level
-			if type == 'level':
-				# If level info is not found in cache, read the level file
-				if name not in Level.levelCache:
-					try: 
-						Level.levelCache[name] = self.generateCacheEntry(type, name)
-
-					except Exception as e:
-						print("Exception while generating level cache: " + str(e), file=sys.stderr)
-
-				# Add concurrent think aloud slide, if configured
-				if phaseName == PhaseType.Competition and thinkaloud == 'concurrent':
-					infoPanelFileNames.append('thinkaloudCon.txt')
-					fileTypes.append('text')
-				
-				# Add level
-				levelFileNames.append(name)
-				fileTypes.append(type)
-
-				# Add retrospective think aloud slide, if configured
-				if phaseName == PhaseType.Competition and thinkaloud == 'retrospective':
-					infoPanelFileNames.append('thinkaloudRet.txt')
-					fileTypes.append('text')
-
-			# Append Info Panel
-			elif type == 'text':
-				infoPanelFileNames.append(name)
-				fileTypes.append(type)			
-
-			# Add other stuff, like Tutorial slides or AltTask
-			elif type in ALL_LEVEL_TYPES.keys():
-				infoPanelFileNames.append(name)
-				fileTypes.append(type)
-
-		# Update the tasks counter
-		self.numTasks += len(levelFileNames)
-		self.tasksRemaining += len(levelFileNames)
-
-		# Randomize / shuffle the level file names if configured 
-		if shuffle:
-			random.shuffle(levelFileNames)
-
-		# Feed the parsed entries into the new level que system
-		for ft in fileTypes:
-			fileName = levelFileNames.pop(0) if ft == 'level' else infoPanelFileNames.pop(0)
-			self.preLevelInsert(fileName=fileName, fileType=ft, tutorialStatus=tutorialStatus)
-			self.appendLevel(Level(ft, fileName))
-
-
-	def preLevelInsert(self, fileName: str, fileType: str, tutorialStatus: Dict[str, TutorialStatus]):
-		# Only insert stuff before levels
-		if fileType != 'level':
-			return
-
-		# Insert tutorial slides before levels with camouflage / covert gates, if enabled in the config
-		if not self.phaseConfig.get('insertTutorials', True):
-			return
-
-		if Level.hasGate2(fileName, gate=KEY_COVERT) and KEY_COVERT not in tutorialStatus:
-			self.appendLevel(Level('tutorial', KEY_COVERT))
-			tutorialStatus[KEY_COVERT] = TutorialStatus(KEY_COVERT) # Mark the covert slide as inserted (not yet shown)
-
-		if Level.hasGate2(fileName, gate=KEY_CAMOUFLAGE) and KEY_CAMOUFLAGE not in tutorialStatus:
-			self.appendLevel(Level('tutorial', KEY_CAMOUFLAGE))
-			tutorialStatus[KEY_CAMOUFLAGE] = TutorialStatus(KEY_CAMOUFLAGE) # Mark the camou slide as inserted (not yet shown)
-
-
-	@staticmethod
-	def generateCacheEntry(type: str, name: str):
-		"""Read in the entire level file once to gather needed information about the level"""
-		covert = False
-		camouflage = False
-
-		# Look at the level to determine if a covert / camouflage gate is present
-		with open(safe_join(Level.getBasePath(type), name), 'r', encoding='UTF-8') as f:
-			txt = f.read()
-		covert = re.search("^element§[0-9]*§CovertGate§[0-9]§[0-9]*§[0-9]*§(?!camouflaged)", txt, re.MULTILINE) != None
-		camouflage = re.search("^element§[0-9]*§CovertGate§[0-9]§[0-9]*§[0-9]*§(camouflaged)", txt, re.MULTILINE) != None
-		
-		randomSwitches = re.findall("^element§([0-9]*)§Switch§[0-9]§[0-9]*§[0-9]*§random", txt, re.MULTILINE)
-		randomSwitches = list(map(int, randomSwitches))
-
-		return CachedLevel(gateCamouflage = camouflage, gateCovert=covert, randomSwitches=randomSwitches)
 
 
 	# +----------------------------+
