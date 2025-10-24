@@ -1,0 +1,186 @@
+{
+	"pool_paper_easy": [
+		{
+			"name": "low/Level1_random",
+			"type": "level"
+		},
+		{
+			"name": "low/Level4_random",
+			"type": "level"
+		}
+	],
+
+	"pool_paper_medium": [
+		{
+			"name": "medium/Level3_random",
+			"type": "level"
+		},
+		{
+			"name": "medium/Level4_random",
+			"type": "level"
+		},
+		{
+			"name": "medium/Level5_random",
+			"type": "level"
+		},
+		{
+			"name": "medium/Level6_random",
+			"type": "level"
+		}
+	],
+
+	"sequence_paper": [
+		{
+			"name": "competitionPhase_Start.txt",
+			"type": "info"
+		},
+		{
+			"type": "take_random",
+			"amount": 0,
+			"from": "pool_paper_easy"
+		},
+		{
+			"type": "take_random",
+			"amount": 0,
+			"from": "pool_paper_medium"
+		}
+	],
+
+	"group_1": [
+		{
+			"name": "level_1A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_1B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_1C",
+			"type": "level"
+		}
+	],
+	"group_2": [
+		{
+			"name": "level_2A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_2B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_2C",
+			"type": "level"
+		}
+	],
+	"group_3": [
+		{
+			"name": "level_3A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_3B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_3C",
+			"type": "level"
+		}
+	],
+	"group_4": [
+		{
+			"name": "level_4A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_4B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_4C",
+			"type": "level"
+		}
+	],
+	"group_5": [
+		{
+			"name": "level_5A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_5B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_5C",
+			"type": "level"
+		}
+	],
+	"group_6": [
+		{
+			"name": "level_6A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_6B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_6C",
+			"type": "level"
+		}
+	],
+	"group_7": [
+		{
+			"name": "level_7A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_7B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_7C",
+			"type": "level"
+		}
+	],
+	"group_8": [
+		{
+			"name": "level_8A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_8B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_8C",
+			"type": "level"
+		}
+	],
+	"group_9": [
+		{
+			"name": "level_9A",
+			"type": "level"
+		}, 
+		{
+			"name": "level_9B",
+			"type": "level"
+		}, 
+		{
+			"name": "level_9C",
+			"type": "level"
+		}
+	],
+
+	"sequence_henrik": [
+		{
+			"type": "take_from_multiversion",
+			"amount": 3,
+			"from": [
+				"group_1", "group_2", "group_3", "group_4", "group_5", "group_6", 
+				"group_7", "group_8", "group_9"
+			]
+		}
+	]
+}

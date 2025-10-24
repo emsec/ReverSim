@@ -550,7 +550,7 @@ def main():
 
 	# Load the game config
 	os.environ.setdefault("REVERSIM_CONFIG", location_gameConfig)
-	gameConfig.loadConfig(location_gameConfig)
+	gameConfig.loadGameConfig(location_gameConfig)
 
 	# Load the log parser config
 	logParserConfig: Dict[str, Any] = {}

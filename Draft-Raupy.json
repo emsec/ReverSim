@@ -1,0 +1,256 @@
+{
+	"pool_paper_easy": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "low/Level1_random",
+				"type": "level"
+			},
+			{
+				"name": "low/Level4_random",
+				"type": "level"
+			}
+		]
+	},
+
+	"pool_paper_medium": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "medium/Level3_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level4_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level5_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level6_random",
+				"type": "level"
+			}
+		]
+	},
+
+	"group_henrik_pause": {
+		"order": "sequential",
+		"amount": "all",
+		"eliminate": false,
+		"levels": [
+			{
+				"name": "medium/Level3_random",
+				"type": "info"
+			}
+		]
+	},
+
+	["henrik", "henrik_pause", "henrik", ]
+
+	"henrik": {
+		"order": "random",
+		"amount": ["A", "B", "C"],
+		"eliminate": true,
+		"A": [
+			{
+				"name": "level_1A",
+				"type": "level",
+				"eliminate": "1"
+			}
+		],
+		"B": [
+			{
+				"name": "level_1B",
+				"type": "level",
+				"eliminate": "1"
+			}
+		]
+		"levels": [
+			[
+				{
+					"name": "level_1A",
+					"type": "level",
+					"group": "A"
+				}, 
+				{
+					"name": "level_1B",
+					"type": "level",
+					"group": "B"
+				}, 
+				{
+					"name": "level_1C",
+					"type": "level",
+					"group": "C"
+				}
+			],
+			{
+				"name": "level_1A",
+				"type": "level",
+				"eliminate": "level1",
+				"group": "A"
+			}, 
+			{
+				"name": "level_1B",
+				"type": "level",
+				"eliminate": "level1",
+				"group": "B"
+			}, 
+			{
+				"name": "level_1C",
+				"type": "level",
+				"eliminate": "level1",
+				"group": "C"
+			},
+			{
+				"name": "level_2A",
+				"type": "level",
+				"eliminate": "level2",
+				"group": "A"
+			}, 
+			{
+				"name": "level_2B",
+				"type": "level",
+				"eliminate": "level2",
+				"group": "B"
+			}, 
+			{
+				"name": "level_2C",
+				"type": "level",
+				"eliminate": "level2",
+				"group": "C"
+			},
+			{
+				"name": "level_3A",
+				"type": "level",
+				"eliminate": "level3",
+				"group": "A"
+			}, 
+			{
+				"name": "level_3B",
+				"type": "level",
+				"eliminate": "level3",
+				"group": "B"
+			}, 
+			{
+				"name": "level_3C",
+				"type": "level",
+				"eliminate": "level3",
+				"group": "C"
+			},
+			{
+				"name": "level_4A",
+				"type": "level",
+				"eliminate": "level4",
+				"group": "A"
+			}, 
+			{
+				"name": "level_4B",
+				"type": "level",
+				"eliminate": "level4",
+				"group": "B"
+			}, 
+			{
+				"name": "level_4C",
+				"type": "level",
+				"eliminate": "level4",
+				"group": "C"
+			},
+			{
+				"name": "level_5A",
+				"type": "level",
+				"eliminate": "level5",
+				"group": "A"
+			}, 
+			{
+				"name": "level_5B",
+				"type": "level",
+				"eliminate": "level5",
+				"group": "B"
+			}, 
+			{
+				"name": "level_5C",
+				"type": "level",
+				"eliminate": "level5",
+				"group": "C"
+			},
+			{
+				"name": "level_6A",
+				"type": "level",
+				"eliminate": "level6",
+				"group": "A"
+			}, 
+			{
+				"name": "level_6B",
+				"type": "level",
+				"eliminate": "level6",
+				"group": "B"
+			}, 
+			{
+				"name": "level_6C",
+				"type": "level",
+				"eliminate": "level6",
+				"group": "C"
+			},
+			{
+				"name": "level_7A",
+				"type": "level",
+				"eliminate": "level7",
+				"group": "A"
+			}, 
+			{
+				"name": "level_7B",
+				"type": "level",
+				"eliminate": "level7",
+				"group": "B"
+			}, 
+			{
+				"name": "level_7C",
+				"type": "level",
+				"eliminate": "level7",
+				"group": "C"
+			},
+			{
+				"name": "level_8A",
+				"type": "level",
+				"eliminate": "level8",
+				"group": "A"
+			}, 
+			{
+				"name": "level_8B",
+				"type": "level",
+				"eliminate": "level8",
+				"group": "B"
+			}, 
+			{
+				"name": "level_8C",
+				"type": "level",
+				"eliminate": "level8",
+				"group": "C"
+			},
+			{
+				"name": "level_9A",
+				"type": "level",
+				"eliminate": "level9",
+				"group": "A"
+			}, 
+			{
+				"name": "level_9B",
+				"type": "level",
+				"eliminate": "level9",
+				"group": "B"
+			}, 
+			{
+				"name": "level_9C",
+				"type": "level",
+				"eliminate": "level9",
+				"group": "C"
+			}
+		]
+	}
+}

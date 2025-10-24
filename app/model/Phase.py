@@ -10,7 +10,7 @@ from sqlalchemy.orm import (
 
 from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
 from app.model.Level import Level
-from app.model.LevelLoader.TextFileLevelLoader import TextFileLevelLoader
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.model.LogEvents import ChronoEvent
 from app.model.TimerMixin import TimerMixin
 from app.model.TutorialStatus import TutorialStatus
@@ -109,8 +109,10 @@ class Phase(db.Model, TimerMixin):
 			if 'levels' not in config:
 				raise ModelFormatError("No levels defined for Phase " + self.name + "!")
 
-			self.levels = TextFileLevelLoader(
-				phaseName=self.name, phaseConfig=config, tutorialStatus=tutorialStatus
+			levelList = JsonLevelList.fromFile()
+			self.levels = JsonLevelList(
+				phaseName=self.name, phaseConfig=config, tutorialStatus=tutorialStatus,
+				levelList=levelList
 			).loadLevels()
 
 		# Update the tasks counter

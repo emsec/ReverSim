@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import re
+from types import MappingProxyType
 from typing import Any
 
 from app.model.Level import KEY_CAMOUFLAGE, KEY_COVERT, CachedLevel, Level
@@ -15,7 +16,7 @@ class LevelLoader(ABC):
 		) -> None:
 		self._levels: list[Level]|None = None
 		self._phaseName = phaseName
-		self._phaseConfig = phaseConfig
+		self._phaseConfig = MappingProxyType(phaseConfig)
 		self._tutorialStatus = tutorialStatus
 
 
@@ -25,6 +26,7 @@ class LevelLoader(ABC):
 
 
 	def _appendLevel(self, slideType: str, fileName: str):
+		"""Append a level handling the automatic insertion of tutorials, think aloud etc."""
 		assert self._levels is not None, "appendLevel() is used either before initialization or after the LevelBuilder is complete"
 
 		thinkaloud = self._phaseConfig.get('thinkaloud', 'no') # "concurrent" | "retrospective" | "no"
@@ -38,7 +40,7 @@ class LevelLoader(ABC):
 			thinkaloud=thinkaloud,
 			insertTutorials=insertTutorials
 		)
-		self._levels.append(Level(type=slideType, fileName=fileName))
+		self._appendLevelRaw(slideType=slideType, fileName=fileName)
 		self._postLevelInsert(
 			fileType=slideType,
 			phaseName=self._phaseName,
@@ -46,28 +48,42 @@ class LevelLoader(ABC):
 		)
 
 
+	def _appendLevelRaw(self, slideType: str, fileName: str):
+		"""Append the level without calling any of the pre/post level insertion hooks
+		
+		Also makes sure that the `levelPosition` attribute is updated to ensure proper 
+		level order.
+		"""
+		assert self._levels is not None
+		level = Level(type=slideType, fileName=fileName)
+		level.levelPosition = len(self._levels)
+		self._levels.append(level)
+		return level
+
+
 	def _preLevelInsert(self, phaseName: str, fileName: str, fileType: str, 
 			tutorialStatus: dict[str, TutorialStatus], thinkaloud: str,
 			insertTutorials: bool
 		):
+
 		# Only insert stuff before levels
 		if fileType != 'level':
 			return
 
 		# Add concurrent think aloud slide, if configured
 		if phaseName == PhaseType.Competition and thinkaloud == 'concurrent':
-			self._appendLevel('text', fileName='thinkaloudCon.txt')
+			self._appendLevelRaw('text', fileName='thinkaloudCon.txt')
 
 		# Insert tutorial slides before levels with camouflage / covert gates, if enabled in the config
 		if not insertTutorials:
 			return
 
 		if Level.hasGate2(fileName, gate=KEY_COVERT) and KEY_COVERT not in tutorialStatus:
-			self._appendLevel('tutorial', fileName=KEY_COVERT)
+			self._appendLevelRaw('tutorial', fileName=KEY_COVERT)
 			tutorialStatus[KEY_COVERT] = TutorialStatus(KEY_COVERT) # Mark the covert slide as inserted (not yet shown)
 
 		if Level.hasGate2(fileName, gate=KEY_CAMOUFLAGE) and KEY_CAMOUFLAGE not in tutorialStatus:
-			self._appendLevel('tutorial', fileName=KEY_CAMOUFLAGE)
+			self._appendLevelRaw('tutorial', fileName=KEY_CAMOUFLAGE)
 			tutorialStatus[KEY_CAMOUFLAGE] = TutorialStatus(KEY_CAMOUFLAGE) # Mark the camou slide as inserted (not yet shown)
 
 
@@ -77,7 +93,7 @@ class LevelLoader(ABC):
 
 		# Add retrospective think aloud slide, if configured
 		if phaseName == PhaseType.Competition and thinkaloud == 'retrospective':
-			self._appendLevel('text', fileName='thinkaloudRet.txt')
+			self._appendLevelRaw('text', fileName='thinkaloudRet.txt')
 
 
 	@staticmethod

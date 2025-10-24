@@ -1,0 +1,143 @@
+{
+	"quali": {
+		"order": "sequential",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "goal.txt",
+				"type": "info"
+			},
+			{
+				"name": "submitting.txt",
+				"type": "info"
+			},
+			{
+				"name": "qualificationPhase_Start.txt",
+				"type": "info"
+			},
+			{
+				"name": "qualification/alow_00000001",
+				"type": "level"
+			},
+			{
+				"name": "qualification/blow_00001000_v2",
+				"type": "level"
+			},
+			{
+				"name": "qualification/clow_11111101_random",
+				"type": "level"
+			},
+			{
+				"name": "qualification/quali4_random",
+				"type": "level"
+			},
+			{
+				"name": "retut/voluntaryTutorial.txt",
+				"type": "special"
+			}
+		]
+	},
+
+	"info_competition": {
+		"order": "sequential",
+		"eliminate": false,
+		"levels": [
+			{
+				"name": "competitionPhase_Start.txt",
+				"type": "info"
+			}
+		]
+	},
+
+	"pool_paper_easy": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "low/Level1_random",
+				"type": "level"
+			},
+			{
+				"name": "low/Level4_random",
+				"type": "level"
+			}
+		]
+	},
+
+	"pool_paper_medium": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "medium/Level3_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level4_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level5_random",
+				"type": "level"
+			},
+			{
+				"name": "medium/Level6_random",
+				"type": "level"
+			}
+		]
+	},
+
+	"pool_paper_hard": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "high/Level1_random",
+				"type": "level"
+			},
+			{
+				"name": "high/Level5_fixed_random",
+				"type": "level"
+			},
+			{
+				"name": "high/r2d7_fixed_improved_random",
+				"type": "level"
+			},
+			{
+				"name": "high/F12_random",
+				"type": "level"
+			}
+		]
+	},
+
+	"info_difficulty": {
+		"order": "sequential",
+		"eliminate": false,
+		"levels": [ 
+			{
+				"name": "difficulty_info.txt",
+				"type": "info"
+			}
+		]
+	},
+
+	"pool_paper_camou": {
+		"order": "random",
+		"amount": "all",
+		"eliminate": true,
+		"levels": [
+			{
+				"name": "camouflaged/Level1_camou_random",
+				"type": "level"
+			},
+			{
+				"name": "camouflaged/Level7_camou_random",
+				"type": "level"
+			}
+		]
+	}
+}

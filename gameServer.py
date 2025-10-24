@@ -112,7 +112,7 @@ def createMinimalApp():
 
 	# Load game config
 	REVERSIM_CONF = os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json")
-	gameConfig.loadConfig(REVERSIM_CONF, app.instance_path)
+	gameConfig.loadGameConfig(REVERSIM_CONF, app.instance_path)
 
 	return app
 

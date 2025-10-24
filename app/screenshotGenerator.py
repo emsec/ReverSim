@@ -384,7 +384,7 @@ def getLevelsFromGroup(groupNames: list[str]):
 	from app.model.Level import Level
 	from app.config import LEVEL_ENCODING, REMAP_LEVEL_TYPES
 	import app.config as gameConfig
-	gameConfig.loadConfig()
+	gameConfig.loadGameConfig()
 
 	global base_input_path
 	base_input_path = Level.getBasePath(type='level')
