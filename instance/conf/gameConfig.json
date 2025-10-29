@@ -67,6 +67,22 @@
 			}
 		},
 
+		"henrik": {
+			"ctr": 999999999,
+			"config": "rulesPaper",
+			"displayName": "Henrik Paper",
+			"hide": false,
+			"phases": ["IntroduceElements", "IntroduceDrawingTools", "Quali", "Competition", "FinalScene"],
+			"Quali": {
+				"shuffle": false,
+				"levels": ["quali"]
+			},
+			"Competition": {
+				"shuffle": true,
+				"levels": ["pool_henrik", "info_henrik_break", "pool_henrik", "info_henrik_break", "pool_henrik"]
+			}
+		},
+
 		"editor": {
 			"ctr": 999999999,
 			"config": "configEditor",

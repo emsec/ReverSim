@@ -83,6 +83,9 @@ class JsonLevelList(LevelLoader):
 			assert eliminate, "This configuration only makes sense with eliminate enabled"
 			self.load_entries_multiversion(self.pool[list_name], list_name, amount, shuffle_amount)
 
+		else:
+			raise ValueError('An invalid value for amount has made it through the pre checks')
+
 
 	def load_entries(self,
 			current_pool: list[dict[str, Any] | list[dict[str, Any]]],
@@ -123,6 +126,7 @@ class JsonLevelList(LevelLoader):
 			assert isinstance(level_group, list), "Please specify a list that contains one level of each group"
 			entry = [level for level in level_group if level['group'] == group_name]
 			assert len(entry) == 1, "There should be exactly one entry matching this group in the level_group"
+			self._appendLevel(slideType=entry[0]['type'], fileName=entry[0]['name'])
 
 
 	@staticmethod
