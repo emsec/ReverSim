@@ -7,9 +7,12 @@ class LevelViewScene extends BaseScene
 		this.circuit = null;
 		this.circuitGameObjects = [];
 
+		const url = new URL(window.location.href);
+
 		this.showTextAnchors = true; // Show text anchor positions
 		this.showClues = true; // Highlight covert gates and switches with random initial state
 		this.showIDs = true; // Show the IDs of switches
+		this.showWireLen = url.searchParams.has('showWireLen'); // Show the manhattan distance of wires
 		this.splittersAlwaysVisible = true;
 		this.enableLevelStats = false;
 		this.levelPath = null;
@@ -150,6 +153,25 @@ class LevelViewScene extends BaseScene
 
 			this.circuit.calculateOutputs();
 			this.circuit.wireDrawer.drawWires();
+
+			// Show the wire length if enabled
+			if(this.showWireLen)
+			{
+				for(const wire of this.circuit.wireDrawer.wires)
+				{
+					const numPoints = wire.getPoints().length;
+					const point = wire.getPoints()[Math.max(numPoints - 2, 1)];
+					const textPos = BaseScene.levelToScreenCoords(point[0], point[1], this.marginFac);
+					const xOffset = 0//(numPoints) > 2 ? 25 : -25;
+					this.circuitGameObjects.push(
+						this.drawText(
+							parseFloat(wire.getLength().toFixed(1)) + 'u', // Hack to properly print float
+							textPos.x + xOffset, textPos.y - 20,
+							20, LevelViewScene.annotationColor, 'center', true
+						)
+					);
+				}
+			}
 		}
 		catch(error) {
 			const errText = 'message' in error ? error.message : error;
