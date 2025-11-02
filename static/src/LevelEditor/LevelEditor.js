@@ -751,7 +751,7 @@ class LevelEditor extends LevelViewScene
 
 LevelEditor.gridWidth = 1250;
 LevelEditor.gridHeight = 700;
-LevelEditor.gridIncrements = 50;
+LevelEditor.gridIncrements = Layouter.GRID_SIZE;
 
 LevelEditor.elementSelectDistance = 30;
 LevelEditor.lineSelectDistance = 10;

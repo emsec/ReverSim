@@ -159,14 +159,21 @@ class LevelViewScene extends BaseScene
 			{
 				for(const wire of this.circuit.wireDrawer.wires)
 				{
+					// Calculate the length and the position for the text
 					const numPoints = wire.getPoints().length;
 					const point = wire.getPoints()[Math.max(numPoints - 2, 1)];
 					const textPos = BaseScene.levelToScreenCoords(point[0], point[1], this.marginFac);
-					const xOffset = 0//(numPoints) > 2 ? 25 : -25;
+					const wireLen = wire.getLength()/Layouter.GRID_SIZE
+
+					// Hide wire length of all wires that are too short
+					if(wireLen < 0.2)
+						continue;
+					
+					// Create Text object
 					this.circuitGameObjects.push(
 						this.drawText(
-							parseFloat(wire.getLength().toFixed(1)) + 'u', // Hack to properly print float
-							textPos.x + xOffset, textPos.y - 20,
+							parseFloat(wireLen.toFixed(1)) + 'u', // Hack to properly print float
+							textPos.x, textPos.y - 20,
 							20, LevelViewScene.annotationColor, 'center', true
 						)
 					);

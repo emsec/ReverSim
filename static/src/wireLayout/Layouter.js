@@ -5,7 +5,6 @@ class Layouter
 {
 	constructor(scene, levelElements)
 	{
-		this.GRID_SIZE = 50;
 		this.levelElements = levelElements;
 	}
 
@@ -18,7 +17,7 @@ class Layouter
 
 	computeOutputWire()
 	{
-		var GRID_SIZE = 50;
+		const GRID_SIZE = Layouter.GRID_SIZE;
 		var wires = new Array();
 		var occupiedPoints = new Set();
 
@@ -275,3 +274,5 @@ class Layouter
 		return false;
 	}
 }
+
+Layouter.GRID_SIZE = 50;
