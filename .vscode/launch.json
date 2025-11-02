@@ -8,7 +8,8 @@
 			"module": "flask",
 			"env": {
 				"FLASK_APP": "gameServer.py",
-				"FLASK_DEBUG": "1"
+				"FLASK_DEBUG": "1",
+				"PROMETHEUS_MULTIPROC_DIR": "tmp"
 			},
 			"args": [
 				"run",
@@ -30,10 +31,14 @@
 				"static/src/externalLibraries/**"
 			],
 			"preferences": {
+				"browser.startup.homepage": "http://localhost:8000/index",
 				"browser.translations.automaticallyPopup": false,
 				"browser.translations.neverTranslateLanguages": "en",
 				"browser.search.suggest.enabled": false,
-				"browser.urlbar.suggest.searches": false
+				"browser.urlbar.suggest.searches": false,
+				"browser.engagement.sidebar-button.has-used": true,
+				"sidebar.new-sidebar.has-used": true,
+				"browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt": true
 			}
 		},
 		{

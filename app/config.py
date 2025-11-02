@@ -113,9 +113,12 @@ def getDefaultGamerules() -> dict[str, Optional[Union[str, int, bool, dict[str, 
 gameruleDefault = getDefaultGamerules()
 
 
-def load_config(fileName: str, instanceFolder: str = 'instance') -> dict[str, Any]:
+def load_config(fileName: str, instanceFolder: str|None = None) -> dict[str, Any]:
 	"""Helper to load a JSON configuration relative to the Flask instance folder into a `dict`"""
 	
+	if instanceFolder is None:
+		instanceFolder = getInstanceFolder()
+
 	configPath = safe_join(instanceFolder, fileName)
 	with open(configPath, "r", encoding=LEVEL_ENCODING) as f:
 		# Load Config file & fill default gamerules

@@ -9,6 +9,7 @@ from werkzeug import Response
 
 # import the other modules, belonging to this app
 import app.config as gameConfig
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 import app.router.routerGame as routerGame
 
 # import all routes, belonging to this app
@@ -113,6 +114,7 @@ def createMinimalApp():
 	# Load game config
 	REVERSIM_CONF = os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json")
 	gameConfig.loadGameConfig(REVERSIM_CONF, app.instance_path)
+	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=app.instance_path)
 
 	return app
 

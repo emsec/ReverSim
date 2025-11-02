@@ -10,7 +10,7 @@ from app.model.TutorialStatus import TutorialStatus
 from app.utilsGame import LevelType
 from app.config import load_config
 
-CONFIG_KEY_LEVEL_LIST = 'levels'
+CONFIG_KEY_LEVEL_LIST = 'pools'
 
 class LeanSlide(NamedTuple):
 	slideType: LevelType
@@ -18,6 +18,8 @@ class LeanSlide(NamedTuple):
 
 
 class JsonLevelList(LevelLoader):
+	singleton: dict[str, Any]|None = None
+
 
 	def __init__(self,
 		phaseName: str,
@@ -38,7 +40,7 @@ class JsonLevelList(LevelLoader):
 		Player/Phase combo, you have to create a new `JsonLevelList`.
 		"""
 		self._levels = []
-		list_names: str|list[str] = self._phaseConfig['levels']
+		list_names: str|list[str] = self._phaseConfig[CONFIG_KEY_LEVEL_LIST]
 		if isinstance(list_names, str):
 			list_names = [list_names]
 		assert isinstance(list_names, list), "Expected an array of strings containing the level list names"
@@ -64,7 +66,7 @@ class JsonLevelList(LevelLoader):
 		# We are working on a copy of the current_list to allow for elimination of levels.
 		# We call this copy pool and we only store the actual level list
 		if list_name not in self.pool:
-			self.pool[list_name] = deepcopy(current_list[CONFIG_KEY_LEVEL_LIST])
+			self.pool[list_name] = deepcopy(current_list['levels'])
 		
 		# Shuffle the pool if enabled
 		if shuffle:

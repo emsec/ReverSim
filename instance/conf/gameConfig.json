@@ -58,28 +58,10 @@
 			"hide": false,
 			"phases": ["IntroduceElements", "IntroduceDrawingTools", "Quali", "Competition", "FinalScene"],
 			"Quali": {
-				"shuffle": false,
-				"levels": ["quali"]
+				"pools": ["quali"]
 			},
 			"Competition": {
-				"shuffle": true,
-				"levels": ["info_competition", "pool_paper_easy", "pool_paper_medium", "pool_paper_hard", "pool_paper_camou"]
-			}
-		},
-
-		"henrik": {
-			"ctr": 999999999,
-			"config": "rulesPaper",
-			"displayName": "Henrik Paper",
-			"hide": false,
-			"phases": ["IntroduceElements", "IntroduceDrawingTools", "Quali", "Competition", "FinalScene"],
-			"Quali": {
-				"shuffle": false,
-				"levels": ["quali"]
-			},
-			"Competition": {
-				"shuffle": true,
-				"levels": ["pool_henrik", "info_henrik_break", "pool_henrik", "info_henrik_break", "pool_henrik"]
+				"pools": ["info_competition", "pool_paper_easy", "pool_paper_medium", "pool_paper_hard", "pool_paper_camou"]
 			}
 		},
 
