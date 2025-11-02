@@ -272,7 +272,7 @@ def saveCSV(rois: dict[str, list[ROI_Entry]], filePath: str = ""):
 
 
 if __name__ == "__main__":
-	gameConfig.loadConfig()
+	gameConfig.loadGameConfig()
 
 	updateCanvasSize(width=1280, height=720, offset_x = 0, offset_y = 167)
 

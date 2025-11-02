@@ -1,4 +1,5 @@
 from io import TextIOWrapper
+import logging
 from typing import Optional
 
 from prometheus_client import Gauge
@@ -98,5 +99,5 @@ def updateCrashMetrics():
 	try: 
 		if crashMetric is not None:
 			crashMetric.inc() # Increment the `reversim_client_errors` metric
-	except Exception:
-		pass
+	except Exception as e:
+		logging.error('Unable to update crash metric: ' + str(e))

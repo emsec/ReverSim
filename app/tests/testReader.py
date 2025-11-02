@@ -278,7 +278,7 @@ def parseTime(timeString: str) -> datetime:
 # program entry point
 # NOTE: Minimum Python Version: 3.6
 if __name__ == "__main__":
-	gameConfig.loadConfig()
+	gameConfig.loadGameConfig()
 
 	verifyParticipant('statistics_glurak.csv')
 

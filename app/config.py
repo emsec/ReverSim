@@ -36,6 +36,10 @@ METRIC_UPDATE_INTERVAL = 1 # [s]
 # the server side asset folder, use gameConfig.getAssetPath()
 REVERSIM_STATIC_URL = "/assets"
 
+DEFAULT_FOOTER = {
+	"researchInfo": REVERSIM_STATIC_URL + "/researchInfo/researchInfo.html"
+}
+
 class GroupNotFound(Exception):
 	"""Raised when a group is requested, which is not in the config"""
 	pass
@@ -97,7 +101,7 @@ def getDefaultGamerules() -> dict[str, Optional[Union[str, int, bool, dict[str, 
 		
 		"allowRepetition": False,
 
-		"footer": getFooter(),
+		"footer": DEFAULT_FOOTER,
 
 		"urlPreSurvey": None,
 		"urlPostSurvey": None,
@@ -106,26 +110,34 @@ def getDefaultGamerules() -> dict[str, Optional[Union[str, int, bool, dict[str, 
 	}
 
 # Default gamerules, will be overridden by the gamerules defined inside the group
-gameruleDefault = None
+gameruleDefault = getDefaultGamerules()
 
 
-def loadConfig(configName: str = "conf/gameConfig.json", instanceFolder: str = 'instance'):
+def load_config(fileName: str, instanceFolder: str|None = None) -> dict[str, Any]:
+	"""Helper to load a JSON configuration relative to the Flask instance folder into a `dict`"""
+	
+	if instanceFolder is None:
+		instanceFolder = getInstanceFolder()
+
+	configPath = safe_join(instanceFolder, fileName)
+	with open(configPath, "r", encoding=LEVEL_ENCODING) as f:
+		# Load Config file & fill default gamerules
+		logging.info(f'Loading config "{configPath}"...')
+		return json.load(f)
+
+
+def loadGameConfig(configName: str = "conf/gameConfig.json", instanceFolder: str = 'instance'):
 	"""Read gameConfig.json into the config variable"""
 	global __configStorage, __instance_folder
 	__instance_folder = instanceFolder
 
 	# load the config (groups, gamerules etc.)
 	try:
-		configPath = safe_join(instanceFolder, configName)
-		with open(configPath, "r", encoding="utf-8") as f:
-			# Load Config file & fill default gamerules
-			logging.info('Loading config "' + configPath + '"...')
-			__configStorage = json.load(f)
-			gameruleDefault = getDefaultGamerules()
+		__configStorage = load_config(fileName=configName, instanceFolder=instanceFolder)
 
-			# Get Git Hash from Config
-			__configStorage['gitHash'] = get_git_revision_hash(shortHash=True)
-			logging.info("Game Version: " + LOGFILE_VERSION + "-" + getGitHash())
+		# Get Git Hash from Config
+		__configStorage['gitHash'] = get_git_revision_hash(shortHash=True)
+		logging.info("Game Version: " + LOGFILE_VERSION + "-" + getGitHash())
 
 		# Validate and initialize all groups / add default gamerule
 		for g in __configStorage['groups']:
@@ -263,9 +275,6 @@ def getDefaultLang() -> str:
 
 def getFooter() -> Dict[str, str]:
 	"""Get the footer from the config or return the Default Footer if none is specified"""
-	DEFAULT_FOOTER = {
-		"researchInfo": REVERSIM_STATIC_URL + "/researchInfo/researchInfo.html"
-	}	
 	return config('footer', DEFAULT_FOOTER)
 
 

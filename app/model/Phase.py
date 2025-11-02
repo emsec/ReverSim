@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import ForeignKey, String
@@ -10,7 +11,7 @@ from sqlalchemy.orm import (
 
 from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
 from app.model.Level import Level
-from app.model.LevelLoader.TextFileLevelLoader import TextFileLevelLoader
+from app.model.LevelLoader.JsonLevelList import JsonLevelList, CONFIG_KEY_LEVEL_LIST
 from app.model.LogEvents import ChronoEvent
 from app.model.TimerMixin import TimerMixin
 from app.model.TutorialStatus import TutorialStatus
@@ -106,11 +107,14 @@ class Phase(db.Model, TimerMixin):
 		# Proceed as usual with the level loading
 		else:
 			# Sanity check config
-			if 'levels' not in config:
+			if 'levels' not in config and CONFIG_KEY_LEVEL_LIST not in config:
 				raise ModelFormatError("No levels defined for Phase " + self.name + "!")
 
-			self.levels = TextFileLevelLoader(
-				phaseName=self.name, phaseConfig=config, tutorialStatus=tutorialStatus
+			levelList = JsonLevelList.singleton
+			assert isinstance(levelList, dict), "The levelList was never initialized, please check your logs if something went wrong before"
+			self.levels = JsonLevelList(
+				phaseName=self.name, phaseConfig=config, tutorialStatus=tutorialStatus,
+				levelList=levelList
 			).loadLevels()
 
 		# Update the tasks counter
@@ -304,7 +308,7 @@ class Phase(db.Model, TimerMixin):
 					raise ModelFormatError("The required score for the skill assessment must be a number (" + groupName + ")")
 
 				if score >= requiredScore:
-					print(getShortPseudo(self.pseudonym) + " scored " + str(score) + ", assigning to " + groupName + ".")
+					logging.info(getShortPseudo(self.pseudonym) + " scored " + str(score) + ", assigning to " + groupName + ".")
 					return groupName.casefold(), score
 
 		return None, score

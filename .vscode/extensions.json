@@ -5,11 +5,10 @@
 	// List of extensions which should be recommended for users of this workspace.
 	"recommendations": [
 		"firefox-devtools.vscode-firefox-debug",
-		"wholroyd.jinja",
+		"samuelcolvin.jinjahtml",
 		"ms-python.python",
 		"ms-python.vscode-pylance",
 		"streetsidesoftware.code-spell-checker",
-		"DrMerfy.overtype",
 		"bierner.markdown-mermaid",
 		"alexfromxd.showtime",
 		"ms-toolsai.datawrangler",

@@ -21,6 +21,7 @@ __pycache__/
 env/
 venv/
 .venv/
+tmp/
 
 # --- Debugpy logs, WinMerge Backups etc.
 *.log

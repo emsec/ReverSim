@@ -1,3 +1,4 @@
+import logging
 from threading import Thread
 import time
 from flask import Flask
@@ -25,13 +26,13 @@ class ServerMetrics:
 
 		# Use the regular Prometheus exporter
 		except Exception as e:
-			print(e)
+			logging.error(e)
 
 			metrics = PrometheusMetrics.for_app_factory( # type: ignore
 				excluded_paths=EXCLUDED_PATHS
 			)
 
-		print(f'Using {type(metrics).__name__} as the Prometheus exporter')
+		logging.info(f'Using {type(metrics).__name__} as the Prometheus exporter')
 		return metrics
 
 	metrics = __prometheusFactory()
@@ -48,7 +49,7 @@ class ServerMetrics:
 	# Instead we have to use a periodic task
 	#met_playersConnected.set_function(participantsDict.getConnectedPlayers)
 	
-	met_clientErrors = metrics.gauge("reversim_client_errors",  # type: ignore
+	met_clientErrors = metrics.info("reversim_client_errors",  # type: ignore
 		"Number of error messages and exceptions reported by all clients",
 		multiprocess_mode='sum'
 	)

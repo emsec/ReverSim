@@ -58,17 +58,15 @@
 			"hide": false,
 			"phases": ["IntroduceElements", "IntroduceDrawingTools", "Quali", "Competition", "FinalScene"],
 			"Quali": {
-				"shuffle": false,
-				"levels": "levels_paper_quali.txt"
+				"pools": ["quali"]
 			},
 			"Competition": {
-				"shuffle": true,
-				"levels": ["levels_paper_easy.txt", "levels_paper_medium.txt", "levels_paper_hard.txt", "levels_paper_camou.txt"]
+				"pools": ["info_competition", "pool_paper_easy", "pool_paper_medium", "pool_paper_hard", "pool_paper_camou"]
 			}
 		},
 
 		"editor": {
-			"ctr": 9000,
+			"ctr": 999999999,
 			"config": "configEditor",
 			"phases": ["LevelEditor"],
 			"displayName": "Level Editor"
