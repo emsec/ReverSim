@@ -62,7 +62,6 @@ def createCrashReporter(app: Flask):
 		openCrashReporterFile(
 			crashReporterFilePath,
 			gameConfig.getGroupsDisabledErrorLogging(),
-			ServerMetrics.met_clientErrors, # type: ignore
 			errorLevel=gameConfig.getInt('crashReportLevel')
 		)
 
@@ -145,7 +144,11 @@ def createApp():
 	initLegacyLogFile(app)
 
 	# Init Prometheus (must be done before Flask context is created)
-	ServerMetrics.createPrometheus(app)
+	try:
+		ServerMetrics.createPrometheus(app)
+	except Exception as e:
+		logging.warning(f'The Prometheus metrics failed to initialize: "{e}"')
+		logging.warning('This can be safely ignored when not in production')
 
 	return app
 
