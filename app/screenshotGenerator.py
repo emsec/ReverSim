@@ -10,9 +10,12 @@ import urllib.parse
 import urllib.request
 from flask import json
 
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
+from app.utilsGame import LevelType
+
 try:
 	from playwright.sync_api import Playwright, Page, ConsoleMessage, sync_playwright
-except:
+except Exception:
 	print("This script depends on Playwright to create the browser screenshots.") 
 	print("Install it with `pip install playwright` or better `pip install -r requirementsDev.txt`")
 	exit(-42)
@@ -59,15 +62,16 @@ Circuits in ReverSim consist of eight basic elements:
 | <img src="./assets/shocksign_gray.png" width="32" alt="Danger Sign Icon">   | One of the two objectives. All danger signs have to be OFF in order to solve the level. |
 | <img src="./assets/questionMark.png" width="32" alt="Obfuscated Icon"> | The `Camouflaged` logic gate performing a function unknown to the participant (see details below). |
 
-The icons for the logic gates are derived from the "distinctive shapes" set defined in [IEEE Std 91/91a-1991](https://en.wikipedia.org/wiki/Logic_gate#Symbols).
+The icons for the logic gates are derived from the "distinctive shapes" set defined in 
+[IEEE Std 91/91a-1991](https://en.wikipedia.org/wiki/Logic_gate#Symbols).
 Gates are connected with wires to form the circuit. Any junctions are highlighted with a dot.
 
-ReverSim implements two special types of logic gates for research on hardware obfuscation: `Camouflaged`
-gates visually obscure their actual gate symbol.
-`Covert` gates display a different icon that does
-not match their actual logic function, and allow for "dummy inputs" that are visually connected but have no actual effect.
-Circuits containing such gates are generally more challenging to reverse engineer. The following table lists the possible
-combinations for the `Camouflaged` and `Covert` gates:
+ReverSim implements two special types of logic gates for research on hardware obfuscation: 
+`Camouflaged` gates visually obscure their actual gate symbol.
+`Covert` gates display a different icon that does not match their actual logic function,
+and allow for "dummy inputs" that are visually connected but have no actual effect.
+Circuits containing such gates are generally more challenging to reverse engineer. 
+The following table lists the possible combinations for the `Camouflaged` and `Covert` gates:
 
 |                    | Covert Gate            | Camouflaged Gate          |
 | ------------------ | ---------------------- | ------------------------- |
@@ -84,9 +88,11 @@ A manual for the tool that was used to generate this level library page is avail
 
 JSON_INDENTATION = '    '
 
+DEFAULT_OUTPUT_PATH = 'doc/levels'
+
 base_url = "http://127.0.0.1:8000"
 base_input_path: str = 'examples/conf/assets/levels/differentComplexityLevels'
-base_output_path: str = 'doc/levels'
+base_output_path: str = DEFAULT_OUTPUT_PATH
 pseudonym: str = 'd15bffa801e8d5e26a870c020d7a4a73'
 
 groups: list[str] = []
@@ -100,7 +106,7 @@ TAG_TO_ICON = {
 }
 
 # The script will copy these files to the output directory in the asset subfolder
-RESSOURCE_DEPENDENCIES = [
+RESOURCE_DEPENDENCIES = [
 	"doc/res/elements/battery.png",
 	"doc/res/elements/switch_off_2.png",
 	"doc/res/elements/and.png",
@@ -166,7 +172,7 @@ def handleLog(msg: ConsoleMessage):
 	try:
 		query = urllib.parse.urlparse(msg.page.url).query #type: ignore
 		fileName = urllib.parse.parse_qs(query).get('level')
-	except:
+	except Exception:
 		fileName = '?Unknown Level?'
 
 	# Playwright does not properly stringify JavaScript objects, therefore do it manually
@@ -236,7 +242,7 @@ def screenshotLevel(page: Page, levelName: str):
 
 		quotedLevelName = urllib.parse.quote_plus(currentLevel)
 		page.goto(f'{base_url}/game?group=viewer&lang=en&ui={pseudonym}&level={quotedLevelName}')
-		page.wait_for_timeout(500)
+		page.wait_for_timeout(1000)
 
 		downloadCanvasImage(page, outputName=outputPath)
 	
@@ -245,6 +251,7 @@ def screenshotLevel(page: Page, levelName: str):
 			logging.error("No canvas found, does the pseudonym you specified really exist?")
 		elif 'CONNECTION_REFUSED' in str(e):
 			logging.error("Connection Refused, is the server running?")
+			exit(-1)
 		else:
 			logging.exception(f'Failed to screenshot: "{str(e)}"')
 
@@ -380,16 +387,24 @@ def markdownScreenshotWriter(levelNames: Iterable[str]):
 
 def getLevelsFromGroup(groupNames: list[str]):
 	"""Get all slides of type level for the specified list of groups"""
-	from app.utilsGame import getFileLines
 	from app.model.Level import Level
-	from app.config import LEVEL_ENCODING, REMAP_LEVEL_TYPES
 	import app.config as gameConfig
-	gameConfig.loadGameConfig()
 
-	global base_input_path
+	INSTANCE_FOLDER = os.path.abspath(os.environ.get("REVERSIM_INSTANCE", "./instance"))
+
+	gameConfig.loadGameConfig(
+		configName=os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json"),
+		instanceFolder=INSTANCE_FOLDER
+	)
+
+	global base_input_path, base_output_path
 	base_input_path = Level.getBasePath(type='level')
+	
+	if base_output_path == DEFAULT_OUTPUT_PATH:
+		base_output_path = 'tmp/' + DEFAULT_OUTPUT_PATH
 
-	remapLevelType: Callable[[str], str] = lambda type: REMAP_LEVEL_TYPES[type] if type in REMAP_LEVEL_TYPES else type
+	# Cache the levelList file
+	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=INSTANCE_FOLDER)
 
 	# Iterate over all groups
 	for g in groupNames:
@@ -397,31 +412,27 @@ def getLevelsFromGroup(groupNames: list[str]):
 
 		# Iterate over all Phases that contain level lists
 		for p in filter(lambda p: p in PHASES_WITH_LEVEL_LIST, group['phases']):
-			phase = group[p]
-			assert 'levels' in phase, "The Phase block is missing required key 'levels'"
-			
-			# Convert levels to a list if not already one
-			levelLists = phase['levels'] if isinstance(phase['levels'], list) else [phase['levels']]
+			# The level loader needs to be recreated for every phase as it has internal state
+			levels = JsonLevelList(
+				phaseName=p, phaseConfig=group[p], tutorialStatus={},
+				levelList=JsonLevelList.singleton
+			).getPossibleLevels()
+		
+			# Iterate over all slides skipping everything that is not a level
+			for slide in levels:
+				if slide.type != LevelType.LEVEL:
+					continue
 
-			# Iterate over all level lists
-			for l in levelLists:
-				fileContent = getFileLines(Level.getBasePath('levelList'), l, encoding=LEVEL_ENCODING)
-
-				# Iterate over all lines skipping everything that is not a level
-				for levelType, levelName in fileContent:
-					if remapLevelType(levelType) != 'level':
-						continue
-
-					yield levelName
+				yield slide.fileName # .getName()
 
 
 def getLevelsFromPath(path: str):
 	"""Yield all level files in the specified folder"""
 	# Recursively list the level files in all folders & subfolders
 	for folder, _, levels in os.walk(path):
-		for l in levels:
+		for level in levels:
 			# Splice the parent folder and level file name together and remove all './' occurrences
-			level = l.removeprefix(DOT_SLASH)
+			level = level.removeprefix(DOT_SLASH)
 			parentFolder = os.path.relpath(path=folder, start=base_input_path)
 			levelPath = os.path.join(parentFolder, level)
 			yield levelPath.removeprefix(DOT_SLASH)
@@ -431,7 +442,12 @@ def run(playwright: Playwright):
 	global jsonFile, levelInfos
 
 	# launch the browser and open a new browser page
-	browser = playwright.chromium.launch()
+	try:
+		browser = playwright.chromium.launch()
+	except Exception as e:
+		print(e) # Usually this means the user forgot to run playwright install
+		exit(-1)
+
 	page = browser.new_page()
 	page.on("console", lambda msg: handleLog(msg))
 
@@ -441,8 +457,8 @@ def run(playwright: Playwright):
 		levels = getLevelsFromPath(base_input_path)
 
 	# Iterate over all levels from this source and generate screenshots (skipping duplicates)
-	for l in levels:
-		currentLevel = l.replace('\\', '/')
+	for level in levels:
+		currentLevel = level.replace('\\', '/')
 		if currentLevel in levelInfos:
 			continue
 
@@ -468,7 +484,7 @@ def run(playwright: Playwright):
 		try:
 			ASSET_FOLDER = os.path.join(base_output_path, 'assets')
 			os.makedirs(ASSET_FOLDER, exist_ok=True)
-			for asset in RESSOURCE_DEPENDENCIES:
+			for asset in RESOURCE_DEPENDENCIES:
 				shutil.copy(asset, ASSET_FOLDER)
 
 		except Exception as e:

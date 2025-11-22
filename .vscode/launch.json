@@ -49,8 +49,12 @@
 			"justMyCode": true,
 			"console": "integratedTerminal",
 			"args": [
-				"${input:screenshotGeneratorPseudonym}"
-			]
+				"${input:screenshotGeneratorPseudonym}",
+				"-g", "cognitive_obfuscation"
+			],
+			"env": {
+				"REVERSIM_INSTANCE": "./reversim-conf",
+			}
 		},
 		{
 			"name": "Firefox & BurpProxy",

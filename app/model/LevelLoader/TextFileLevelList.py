@@ -1,4 +1,3 @@
-import logging
 import random
 from app.config import ALL_LEVEL_TYPES, LEVEL_ENCODING
 from app.model.Level import Level
@@ -7,26 +6,34 @@ from app.utilsGame import LevelType, getFileLines
 
 
 class TextFileLevelLoader(LevelLoader):
+	CONFIG_KEY_LEVEL_LIST = 'levels'
+
 	def loadLevels(self) -> list[Level]:
 		self._levels = []
-		
-		# Get the file names of the level list and make sure this is an array, even if 
-		# array contains only one entry
-		levelLists: str|list[str] = self._phaseConfig['levels']
-		if not isinstance(levelLists, list):
-			levelLists = [levelLists]
 
-		for ll in levelLists:
-			self.__readLevelList(
+		for ll in self._getLevelLists():
+			self._readLevelList(
 				fileName=ll,
 				shuffle=self._phaseConfig.get('shuffle', False), # true | false
 			)
 
 		assert self._levels is not None and len(self._levels) > 0, "No levels have been loaded, this is probably an error"
 		return self._levels
+	
+
+	def getPossibleLevels(self) -> list[Level]:
+		levels: list[Level] = []
+
+		for ll in self._getLevelLists():
+			fileContent = getFileLines(Level.getBasePath('levelList'), ll, encoding=LEVEL_ENCODING)
+
+			for fileData in fileContent:
+				levels.append(Level(*fileData))
+
+		return levels
 
 
-	def __readLevelList(self, fileName: str, shuffle: bool) -> None:
+	def _readLevelList(self, fileName: str, shuffle: bool) -> None:
 		"""Utility function used by loadLevels(), read a level list and add all levels to the que"""
 		# get file content for the group the participant is in
 		fileContent = getFileLines(Level.getBasePath('levelList'), fileName, encoding=LEVEL_ENCODING)
@@ -39,15 +46,7 @@ class TextFileLevelLoader(LevelLoader):
 			levelType, name = fileData
 			
 			# Append Level
-			if levelType == LevelType.LEVEL:
-				# If level info is not found in cache, read the level file
-				if name not in Level.levelCache:
-					try: 
-						Level.levelCache[name] = self.generateCacheEntry(levelType, name)
-
-					except Exception as e:
-						logging.error("Exception while generating level cache: " + str(e))
-				
+			if levelType == LevelType.LEVEL:				
 				# Add level
 				levelFileNames.append(name)
 				fileTypes.append(levelType)

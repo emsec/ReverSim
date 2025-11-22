@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
 
 from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
 from app.model.Level import Level
-from app.model.LevelLoader.JsonLevelList import JsonLevelList, CONFIG_KEY_LEVEL_LIST
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.model.LogEvents import ChronoEvent
 from app.model.TimerMixin import TimerMixin
 from app.model.TutorialStatus import TutorialStatus
@@ -107,7 +107,7 @@ class Phase(db.Model, TimerMixin):
 		# Proceed as usual with the level loading
 		else:
 			# Sanity check config
-			if 'levels' not in config and CONFIG_KEY_LEVEL_LIST not in config:
+			if 'levels' not in config and JsonLevelList.CONFIG_KEY_LEVEL_LIST not in config:
 				raise ModelFormatError("No levels defined for Phase " + self.name + "!")
 
 			levelList = JsonLevelList.singleton

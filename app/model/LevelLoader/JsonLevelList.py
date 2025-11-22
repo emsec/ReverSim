@@ -2,7 +2,7 @@ from copy import deepcopy
 import logging
 import random
 from types import MappingProxyType
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 from app.model.Level import Level
 from app.model.LevelLoader.LevelLoader import LevelLoader
@@ -10,14 +10,13 @@ from app.model.TutorialStatus import TutorialStatus
 from app.utilsGame import LevelType
 from app.config import load_config
 
-CONFIG_KEY_LEVEL_LIST = 'pools'
-
 class LeanSlide(NamedTuple):
 	slideType: LevelType
 	fileName: str
 
 
 class JsonLevelList(LevelLoader):
+	CONFIG_KEY_LEVEL_LIST = 'pools'
 	singleton: dict[str, Any]|None = None
 
 
@@ -40,16 +39,28 @@ class JsonLevelList(LevelLoader):
 		Player/Phase combo, you have to create a new `JsonLevelList`.
 		"""
 		self._levels = []
-		list_names: str|list[str] = self._phaseConfig[CONFIG_KEY_LEVEL_LIST]
-		if isinstance(list_names, str):
-			list_names = [list_names]
-		assert isinstance(list_names, list), "Expected an array of strings containing the level list names"
 
-		for list_name in list_names:
+		for list_name in self._getLevelLists():
 			self.parse_list(list_name)
 
 		assert self._levels is not None and len(self._levels) > 0, "No levels have been loaded, this is probably an error"
 		return self._levels
+
+
+	def getPossibleLevels(self) -> list[Level]:
+		levels: list[Level] = []
+
+		for list_name in self._getLevelLists():
+			current_list = MappingProxyType(self.levelList[list_name])
+
+			for entry in current_list['levels']:
+				if isinstance(entry, list):
+					for subEntry in cast(list[dict[str, str]], entry):
+						levels.append(Level(type=subEntry['type'], fileName=subEntry['name']))	
+				else:
+					levels.append(Level(type=entry['type'], fileName=entry['name']))
+
+		return levels
 
 
 	def parse_list(self, list_name: str):
