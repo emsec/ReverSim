@@ -63,9 +63,8 @@ WORKDIR /usr/var/reversim-instance/statistics/LogFiles
 WORKDIR /usr/var/reversim-instance/statistics/canvasPics
 WORKDIR /usr/src/hregame
 
-# Specify mount points for the statistics folder, game config, levels, researchInfo & disclaimer
+# Specify mount points for the statistics folder, levels, researchInfo & disclaimer
 VOLUME /usr/var/reversim-instance/statistics
-VOLUME /usr/var/reversim-instance/conf
 VOLUME /var/log/uwsgi
 
 # Exposes the port that uWSGI is listening to (as configured in hre_game.ini)
