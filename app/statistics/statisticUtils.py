@@ -1,5 +1,4 @@
-from datetime import datetime, timezone, timedelta
-import logging
+from datetime import datetime, timezone
 import math
 
 from typing import Any, Dict, Iterable, List, Optional
@@ -139,55 +138,6 @@ def parseTimestamp(timeString: str) -> datetime:
 	return datetime.fromtimestamp(float(timeString)/1000, tz=tz) # time comes in thousands of a second
 
 
-def parseTimeLegacy(timeString: str, lastTime: Optional[datetime]) -> datetime:
-	"""Convert the time provided by every event in the logfile into a python datetime object"""
-	assert len(timeString) > 0
-
-	# Try to parse the timestamp as unix format
-	convertedTime = parseTime(timeString)
-	if convertedTime != None:
-		return convertedTime
-
-	# Resort to the legacy format
-	try: 
-		try:
-			if timeString.endswith("AM") or timeString.endswith("PM"):
-				convertedTime = datetime.strptime(timeString, "%I:%M:%S %p")
-				convertedTime = convertedTime.replace(year=1970, tzinfo=tz)
-
-			elif timeString.startswith("上午"):
-				convertedTime = datetime.strptime(timeString[2:] + " AM", "%I:%M:%S %p")
-				convertedTime = convertedTime.replace(year=1970, tzinfo=tz)
-
-			elif timeString.startswith("下午"):
-				convertedTime = datetime.strptime(timeString[2:] + " PM", "%I:%M:%S %p")
-				convertedTime = convertedTime.replace(year=1970, tzinfo=tz)
-
-			else:
-				convertedTime = datetime.strptime(timeString, "%H:%M:%S")
-				convertedTime = convertedTime.replace(year=1970, tzinfo=tz)
-
-		except:
-			convertedTime = datetime.strptime(timeString, "%H:%M:%S")
-			convertedTime = convertedTime.replace(year=1970, tzinfo=tz)
-
-	except ValueError:
-		raise LogSyntaxError("Invalid time string: \"" + timeString + "\"")
-
-	assert convertedTime.year >= 1970, "Conversion failed, the year should be >= 1970!"
-
-	# Special case xx: In the old time format, it could overflow (23:59:00 - 00:01:00)
-	if lastTime != None and convertedTime.timestamp() < lastTime.timestamp():
-		timeDifferenceSec = abs(convertedTime.timestamp() - lastTime.timestamp())/1000
-
-		if timeDifferenceSec > 600 or (convertedTime.hour == 23 and convertedTime.minute > 58):
-			if convertedTime.year == 1970 and lastTime.year == 1970:
-				logging.debug("Time overflow: " + str(convertedTime) + " < " + str(lastTime))
-				convertedTime += timedelta(days=1)
-
-	return convertedTime
-
-
 def calculateDuration(startTime: datetime, endTime: datetime) -> float:
 	"""Get the duration the player spend in this phase, or -1 if the phase was never started."""
 	assert isinstance(startTime, datetime)
@@ -223,10 +173,7 @@ def gatherVersion(log: List[Dict[str, Any]]) -> str:
 
 
 def gatherGroup(log: List[Dict[str, Any]], pseudonym: str, version: str) -> str:
-	"""Get the group from the log
-	
-	This version is without Special case 07
-	"""
+	"""Get the group from the log"""
 	assert len(log) > 0
 
 	group = None
@@ -240,11 +187,3 @@ def gatherGroup(log: List[Dict[str, Any]], pseudonym: str, version: str) -> str:
 		raise LogSyntaxError("The group assignment is missing from the logs (v" + version + ")!")
 
 	return group
-
-
-def stripLevelName(levelName: str) -> str:
-	"""Remove the .txt suffix from the levelName 
-	
-	(does not throw an error if the suffix is already stripped)
-	"""
-	return removesuffix(levelName.strip(), '.txt')

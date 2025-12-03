@@ -108,8 +108,8 @@ class Level(db.Model, TimerMixin):
 
 
 	def getName(self) -> str:
-		"""Name of the level with no file extension. 
-		
+		"""The uniform name of the level with no file extension. 
+
 		Replace the folder separators if you want to use it inside a folder path.
 		"""
 		return Level.uniformName(self.fileName)

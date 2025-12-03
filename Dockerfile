@@ -17,7 +17,8 @@ ARG PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
 MAINTAINER Max Planck Institute for Security and Privacy
 LABEL org.opencontainers.image.authors="Max Planck Institute for Security and Privacy"
-LABEL org.opencontainers.image.version="2.0.4"
+# NOTE Also change the version in config.py
+LABEL org.opencontainers.image.version="2.1.0"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 LABEL org.opencontainers.image.description="Ready to deploy Docker container to use ReverSim for research. ReverSim is an open-source environment for the browser, originally developed at the Max Planck Institute for Security and Privacy (MPI-SP) to study human aspects in hardware reverse engineering."
 LABEL org.opencontainers.image.source="https://github.com/emsec/ReverSim"

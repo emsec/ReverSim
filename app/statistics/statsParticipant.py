@@ -3,13 +3,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union, cast
 
 import app.config as gameConfig
 from app.statistics.altTasks.AltTaskParser import AltTaskParser
-from app.statistics.altTasks.zvt import ZVT_Task
-from app.statistics.specialCases import (
-	specialCase1,
-	specialCase2,
-	specialCase11,
-	specialCase12,
-)
+
 from app.statistics.staticConfig import (
 	ENABLE_SPECIAL_CASES,
 	EVENT_T,
@@ -75,7 +69,7 @@ class StatsParticipant:
 		# Handle the standard events
 		EVENTS: List[Tuple[EVENT_T, Callable[[EVENT_T], None]]] = [
 			# General Events
-			(EventNames.GAME_LOADED.value, self.onGameLoaded),
+			(EventNames.GAME_LOADED.value, self.onGameLoaded), # type: ignore
 			(EventNames.GROUP_ASSIGNMENT.value, lambda e: self.onGroupAssignment(e)),
 			(EventNames.REDIRECT.value, self.onNOP),
 			(EventNames.CHANGE_SCENE.value, lambda e: self.onSceneChanged(e)),
@@ -83,21 +77,21 @@ class StatsParticipant:
 
 			# Phase specific events
 			# NOTE Level request is handled above
-			(EventNames.CLICK_NEXT.value, self.onNOP), # old events are called hook!
+			(EventNames.CLICK_NEXT.value, self.onNOP), # old events are called hook! # type: ignore
 			(EventNames.SKILL_ASSESSMENT.value, lambda e: self.getCurrentPhase().onSkillAssessment(e)),
-			(EventNames.CLICK_INTRO_ARROW.value, lambda e: self.getCurrentPhase().onIntroArrow(e)),
-			(EventNames.CLICK_SKIP.value, lambda e:self.getCurrentPhase().getCurrentLevel().onSkip(e)),
+			(EventNames.CLICK_INTRO_ARROW.value, lambda e: self.getCurrentPhase().onIntroArrow(e)), # type: ignore
+			(EventNames.CLICK_SKIP.value, lambda e:self.getCurrentPhase().getCurrentLevel().onSkip(e)), # type: ignore
 
 			# Level specific events
 			(EventNames.STARTED.value, self.onLevelStarted),
-			(EventNames.CLICK_SWITCH.value, lambda e: self.getCurrentPhase().onSwitchClick(e)),
-			(EventNames.CLICK_CONFIRM.value, lambda e: self.getCurrentLevel().onConfirmClick(e)),
-			(EventNames.POPUP_CLICK_FEEDBACK.value, lambda e: self.getCurrentLevel().onLevelSolvedDialogue(e)),
+			(EventNames.CLICK_SWITCH.value, lambda e: self.getCurrentPhase().onSwitchClick(e)), # type: ignore
+			(EventNames.CLICK_CONFIRM.value, lambda e: self.getCurrentLevel().onConfirmClick(e)), # type: ignore
+			(EventNames.POPUP_CLICK_FEEDBACK.value, lambda e: self.getCurrentLevel().onLevelSolvedDialogue(e)), # type: ignore
 
 			# Drawing tools
 			(EventNames.DRAWTOOLS_PEN.value, lambda e: self.getCurrentPhase().onInteractionDrawing(e)),
-			(EventNames.DRAWTOOLS_ERASER.value, lambda e: self.getCurrentPhase().onInteractionDrawing(e)),
-			(EventNames.DRAWTOOLS_DELETE.value, lambda e: self.getCurrentPhase().onInteractionDrawing(e)),
+			(EventNames.DRAWTOOLS_ERASER.value, lambda e: self.getCurrentPhase().onInteractionDrawing(e)), # type: ignore
+			(EventNames.DRAWTOOLS_DELETE.value, lambda e: self.getCurrentPhase().onInteractionDrawing(e)), # type: ignore
 			
 			# AltTask
 			(EventNames.ALT_TASK.value, lambda e: self.getAltTask().handleAltEvent(e))
@@ -106,7 +100,8 @@ class StatsParticipant:
 		# Go through the list and call the corresponding function if one of the events is found
 		e = event.items()
 		for oe, callback in EVENTS:
-			if oe.items() <= e: return callback(event)
+			if oe.items() <= e:
+				return callback(event)
 
 
 	# ----------------------------------------
@@ -125,14 +120,6 @@ class StatsParticipant:
 		assert isinstance(event[LogKeys.TIME], datetime)
 		assert isinstance(event[LogKeys.TYPE], str)
 
-		# Special case 01
-		specialCase1(self, event)
-
-		# Handle the rest as usual
-		
-		# Special case 12
-		specialCase12(self, event)
-
 		# start the already loaded level
 		self.getCurrentLevel().onStart(event)
 
@@ -146,9 +133,9 @@ class StatsParticipant:
 		
 		# Load all phases from the config
 		for phaseName in self.getPhases():
-			# TODO Insert your own AltTask implementation here
 			if phaseName == PhaseType.AltTask:
-				phase = ZVT_Task(phaseName, self.conf)
+				# TODO Insert your own AltTask implementation here
+				phase = AltTaskParser.factory('reversim-conf.statsParser.zvt.ZVT_Task')(phaseName, self.conf)
 
 			# Create a regular phase and register all events
 			else:
@@ -174,7 +161,7 @@ class StatsParticipant:
 			self.getCurrentPhase().onPageReload(event)
 
 			# Run level specific stuff if a level is active
-			if self.getCurrentPhase().hasLevels() and self.getCurrentPhase().currentLevel != None:
+			if self.getCurrentPhase().hasLevels() and self.getCurrentPhase().currentLevel is not None:
 				playerPosition += "@" + self.getCurrentLevel().name
 
 		self.reconnects.append(playerPosition)
@@ -198,16 +185,10 @@ class StatsParticipant:
 		# Call post on the last phase that was active (or skip this step if this is the first phase)
 		if self.currentPhase >= 0:
 			self.getCurrentPhase().post(event)
-		
-		# Special case 11
-		specialCase11(self, newPhaseName)
 
 		# Get the next phase from the expected phase list
 		self.currentPhase += 1
 		expectedPhase = self.getCurrentPhase()
-
-		# Special case 02
-		specialCase2(self, expectedPhase, newPhaseName)
 
 		# Validate and start the next phase
 		if expectedPhase.name == newPhaseName:
@@ -305,7 +286,7 @@ class StatsParticipant:
 		"""Get all phases of the currently active group"""
 		try:
 			return self.conf['phases'] 
-		except:
+		except Exception:
 			raise LogSyntaxError("Error while accessing config (phases)!")
 
 
@@ -360,9 +341,10 @@ class StatsParticipant:
 		for phase in self.statsPhase:
 			if phase.name.casefold() == name.casefold():
 				returnVal = phase
-				if firstEntry: break
+				if firstEntry:
+					break
 
-		if returnVal == None:
+		if returnVal is None:
 			raise StatisticsError("Could not find a phase with name " + name + " in the stats. len(" + str(len(self.statsPhase)) + ").")
 		else:
 			return returnVal

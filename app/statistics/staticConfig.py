@@ -1,6 +1,6 @@
 # Configure Options for the CSV
 from enum import Enum
-from typing import Any, Dict, TypeAlias
+from typing import Any, Dict, TypeAlias, cast
 
 from app.utilsGame import EventType, PhaseType
 
@@ -72,29 +72,29 @@ class TableHeaderLevel(Enum):
 class EventNames(Enum):
 	GROUP_ASSIGNMENT		= {"Event": EventType.GroupAssignment}
 	REDIRECT				= {"Event": EventType.Redirect}
-	GAME_LOADED				= {"Event": EventType.PhaseRequested, "Scene": "PreloadScene"}
+	GAME_LOADED				= {"Event": EventType.PhaseRequested, "Scene": "PreloadScene"} # type: ignore
 	CHANGE_SCENE			= {"Event": EventType.PhaseRequested}
 	DRAWTOOLS_PEN			= {"Event": EventType.Pen}
-	DRAWTOOLS_ERASER		= {"Event": EventType.DrawingTool, "Tool": "eraser"}
-	DRAWTOOLS_DELETE		= {"Event": EventType.DrawingTool, "Tool": "delete button"}
-	CLICK_SWITCH			= {"Event": EventType.Click, "Object": "Switch"}
-	CLICK_CONFIRM			= {"Event": EventType.Click, "Object": "ConfirmButton"}
-	CLICK_NEXT				= {"Event": EventType.Click, "Object": "Continue Button"}
-	CLICK_SIMULATE			= {"Event": EventType.Click, "Object": "Simulate-Level Button"}
-	CLICK_INTRO_ARROW		= {"Event": EventType.Click, "Object": "Arrow"}
+	DRAWTOOLS_ERASER		= {"Event": EventType.DrawingTool, "Tool": "eraser"} # type: ignore
+	DRAWTOOLS_DELETE		= {"Event": EventType.DrawingTool, "Tool": "delete button"} # type: ignore
+	CLICK_SWITCH			= {"Event": EventType.Click, "Object": "Switch"} # type: ignore
+	CLICK_CONFIRM			= {"Event": EventType.Click, "Object": "ConfirmButton"} # type: ignore
+	CLICK_NEXT				= {"Event": EventType.Click, "Object": "Continue Button"} # type: ignore
+	CLICK_SIMULATE			= {"Event": EventType.Click, "Object": "Simulate-Level Button"} # type: ignore
+	CLICK_INTRO_ARROW		= {"Event": EventType.Click, "Object": "Arrow"} # type: ignore
 	LOAD_INFO				= {"Event": EventType.LevelRequested + " Info"}
 	LOAD_LEVEL				= {"Event": EventType.LevelRequested + " Level"}
 	LOAD_SPECIAL			= {"Event": EventType.LevelRequested + " Special"}
 	# There might be more LOAD_ events, they all start with new ...
 	STARTED					= {"Event": EventType.LevelStarted} # NOTE LOAD_FINISHED, Called when the level is started
-	POPUP_CLICK_FEEDBACK	= {"Event": EventType.PopUp, "Content": "Feedback about Clicks"}
+	POPUP_CLICK_FEEDBACK	= {"Event": EventType.PopUp, "Content": "Feedback about Clicks"} # type: ignore
 	SKILL_ASSESSMENT		= {"Event": EventType.SkillAssessment}
 	ALT_TASK				= {"Event": EventType.AltTask}
 	TIME_SYNC				= {"Event": EventType.TimeSync}
-	CLICK_SKIP				= {"Event": EventType.Click, "Object": "Skip-Level Button", "Consequence Event": "Current level is being skipped"}
+	CLICK_SKIP				= {"Event": EventType.Click, "Object": "Skip-Level Button", "Consequence Event": "Current level is being skipped"} # type: ignore
 
-	def items(self) -> Any:
+	def items(self):
 		"""Shorthand for `self.value.items()`"""
-		return self.value.items() 
+		return cast(dict[str, EventType|str], self.value).items() # type: ignore
 
 GAME_INTRO_PHASES: list[str] = [PhaseType.Start, 'GameIntroND']
