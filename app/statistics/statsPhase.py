@@ -3,16 +3,15 @@ from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from app.config import LEVEL_ENCODING
-
-from app.model.Level import ALL_LEVEL_TYPES, Level
-from app.model.Phase import PHASES_WITH_LEVELS, Phase
+from app.config import PHASES_WITH_LEVELS
+from app.model.Level import ALL_LEVEL_TYPES
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 
 from app.statistics.staticConfig import ENABLE_SPECIAL_CASES, EVENT_T, LevelStatus, PhaseStatus
-from app.statistics.statisticUtils import LogSyntaxError, calculateDuration, removeprefix, stripLevelName
+from app.statistics.statisticUtils import LogSyntaxError, calculateDuration, removeprefix
 from app.statistics.statsLevel import StatsLevel
 
-from app.utilsGame import PhaseType, getFileLines
+from app.utilsGame import PhaseType
 
 
 class StatsPhase:
@@ -53,18 +52,18 @@ class StatsPhase:
 		# If phase is in progress, check if one of the levels is not solved.
 		elif self.status == PhaseStatus.INPROGRESS:
 			self.status = PhaseStatus.SOLVED
-			for l in self.levels:
-				if l.stats['status'] not in [LevelStatus.SOLVED, LevelStatus.SKIPPED]:
+			for level in self.levels:
+				if level.stats['status'] not in [LevelStatus.SOLVED, LevelStatus.SKIPPED]:
 					self.status = PhaseStatus.ABORTED
 					break
 		
 		# Call post for all levels
 		if self.hasLevels():
-			if self.currentLevel == None and self.status != PhaseStatus.NOTREACHED:
+			if self.currentLevel is None and self.status != PhaseStatus.NOTREACHED:
 				raise LogSyntaxError("Ending phase with levels, but no level was ever loaded " + self.name + ".")
 
 			# Call post for the currently active level (will set the end time)
-			if self.currentLevel != None:
+			if self.currentLevel is not None:
 				self.getCurrentLevel().post(event)
 
 			# Call post to make sure all levels in this phase are terminated. 
@@ -79,7 +78,7 @@ class StatsPhase:
 			try:
 				assert isinstance(self.startTime, datetime)
 				calculateDuration(self.startTime, self.endTime)
-			except:
+			except Exception:
 				# Ignore errors on the final scene, since the timing of redirect and gameover events are imprecise
 				if self.name != PhaseType.FinalScene:
 					raise LogSyntaxError("Phase start time " + str(self.startTime) + " should be before " + str(self.endTime) + "!")
@@ -91,57 +90,25 @@ class StatsPhase:
 
 	def generateLevels(self, conf: Dict[str, Any]) -> List[Tuple[str, str]]:
 		"""Build the levels/info screens index for the currently active phase 
-		(in the order specified in the levels list txt) 
+		(in the order specified in the levels list)
 		"""
 		if not self.hasLevels():
 			raise LogSyntaxError("Tried to get all levels from " + self.name + ", but the phase has none!")
-
-		# 'concurrent', 'retrospective', 'no'
-		thinkaloudState = conf[self.name].get('thinkaloud', 'no')
+		
+		assert isinstance(JsonLevelList.singleton, dict), "The JsonLevelList cache was not populated"
 
 		try:
-			# Build the complete level list from all level lists specified in the config for the current phase
-			input: List[str] = []
-			output: List[Tuple[str, str]] = []
-			if isinstance(conf[self.name]['levels'], str):
-				input.append(conf[self.name]['levels'])
-			else:
-				input.extend(conf[self.name]['levels'])
-			
-			# Gather level names for each level in the full list
-			for levelList in input:
-				for line in getFileLines(Level.getBasePath('levelList'), levelList, encoding=LEVEL_ENCODING):
-					levelType = line[0].strip().casefold()
-					levelName = stripLevelName(line[1])
+			# The level loader needs to be recreated for every phase as it has internal state
+			levels = JsonLevelList(
+				phaseName=self.name, phaseConfig=conf[self.name], tutorialStatus={},
+				levelList=JsonLevelList.singleton
+			).getPossibleLevels()
 
-					# Build level cache (used for camouflage/covert gates)
-					if levelType == 'level' and levelName not in Level.levelCache:
-						try: 
-							Level.levelCache[levelName] = Phase.generateCacheEntry(levelType, levelName)
+			# We just need a simple list with tuple(levelType, levelName)
+			return [(level.type, level.getName()) for level in levels]
 
-						except Exception as e:
-							print("Exception while generating level cache: " + str(e))
-
-					# Add level/info/etc. to expected index
-					output.append((levelType, levelName)) # (type, levelName)
-
-			# If thinkaloud is enabled
-			if thinkaloudState in THINKALOUD_CONFIG_OPTIONS:
-				# 0 for 'concurrent' and 1 for 'retrospective'
-				thinkaloudIndex = THINKALOUD_CONFIG_OPTIONS.index(thinkaloudState)
-
-				i = 0
-				while i < len(output):
-					levelType, levelName = output[i]
-
-					# only insert slide before/after levels
-					if levelType == 'level': # (type, levelName)
-						output.insert(i + thinkaloudIndex, ('info', THINKALOUD_SLIDE_NAMES[thinkaloudIndex]))
-						i += 1
-					i += 1
-
-			return output
-		except:
+		except Exception as e:
+			logging.error(e)
 			raise LogSyntaxError("Error while accessing config (levels)!")
 
 
@@ -219,7 +186,7 @@ class StatsPhase:
 		self.skipNextInfoBegin = False
 
 		# If the page was reloaded, do not load the next level but instead restart the current one
-		if ENABLE_SPECIAL_CASES and self.reloadLevel != None:
+		if ENABLE_SPECIAL_CASES and self.reloadLevel is not None:
 			self.reloadLevel.onLoad(event, self.reloadLevel.position)
 			self.reloadLevel = None
 			return
@@ -243,7 +210,7 @@ class StatsPhase:
 				self.levels.insert(self.levelCounter, tut)
 				nextLevel = tut
 			else:
-				raise LogSyntaxError("Expected level of type " + expectedLevelType + ", got " + nextLevelType + " in " + self.name + "!")
+				raise LogSyntaxError("Expected slide of type " + expectedLevelType + ", got " + nextLevelType + " in " + self.name + "!")
 			
 
 		# If the level contains a circuit, the order might be randomized, so search for the level in the array
@@ -270,7 +237,7 @@ class StatsPhase:
 
 	def nextLevel(self, event: EVENT_T, nextLevel: StatsLevel):
 		# Call post for the last level
-		if self.currentLevel != None:
+		if self.currentLevel is not None:
 			self.getCurrentLevel().post(event)
 
 		# Set the new level as active, register all events that belong to the level and call onStart
@@ -297,7 +264,7 @@ class StatsPhase:
 	
 	def onPageReload(self, event: EVENT_T):
 		# Run level specific stuff if a level is active
-		if self.hasLevels() and self.currentLevel != None:
+		if self.hasLevels() and self.currentLevel is not None:
 			currentLevel = self.getCurrentLevel()
 			currentLevel.onPageReload()
 
@@ -338,8 +305,10 @@ class StatsPhase:
 	
 	def getTasks(self) -> List[StatsLevel]:
 		levels: List[StatsLevel] = []
-		for l in self.levels:
-			if l.isTask(): levels.append(l)
+		for level in self.levels:
+			if level.isTask(): 
+				levels.append(level)
+		
 		return levels
 
 
@@ -360,9 +329,9 @@ class StatsPhase:
 
 
 	def getLevelByName(self, name: str) -> StatsLevel:
-		for l in self.levels:
-			if l.name == name:
-				return l
+		for level in self.levels:
+			if level.name == name:
+				return level
 			
 		raise KeyError("Could not find a level with name " + name)
 

@@ -79,6 +79,6 @@
 			"id": "screenshotGeneratorPseudonym",
 			"description": "The pseudonym to generate the screenshots with. Create it by starting the game in a group with the level viewer.",
 			"type": "promptString"
-		},
+		}
 	]
 }

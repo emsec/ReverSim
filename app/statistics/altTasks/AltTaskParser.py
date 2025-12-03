@@ -1,4 +1,7 @@
+import importlib
 from typing import Any, Callable, Dict, List, Tuple
+
+from app.statistics.statsPhase import StatsPhase
 
 
 # ----------------------------------------
@@ -26,5 +29,11 @@ class AltTaskParser():
 
 
 	@staticmethod
-	def getEvents(participant: Any) -> List[Tuple[Dict[str, Any], Callable[[Dict[str, Any]], None]]]:
-		return []
+	def factory(taskName: str):
+		# TODO Add dynamic loading of different ZVT implementations
+		packages = taskName.split('.')
+		AltTask = getattr(importlib.import_module('.'.join(packages[0:-1])), packages[-1])
+
+		assert isinstance(AltTask, type(AltTaskParser))
+		assert isinstance(AltTask, type(StatsPhase))
+		return AltTask

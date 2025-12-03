@@ -112,7 +112,8 @@ class QualiScene extends GameScene
 	 */
 	checkQualiCondition()
 	{
-		return this.level.stats.simulateCtr >= 2;
+		const isSolved = super.getSolvingState();
+		return this.level.stats.confirmClickCtr >= 2 && !isSolved;
 	}
 
 	onCloseFeedbackAlert()
@@ -141,11 +142,12 @@ class QualiScene extends GameScene
 	// @Override
 	getSolvingState()
 	{
-		// Return True when the player failed the quali phase, to be able to show the level feedback dialogue.
+		// Return True when the player failed the quali phase, to be able to show the 
+		// level feedback dialogue.
 		if(this.checkQualiCondition())
 			return true;
-		else
-			return super.getSolvingState();
+
+		return super.getSolvingState();
 	}
 
 	// @Override
