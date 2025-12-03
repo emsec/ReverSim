@@ -196,6 +196,7 @@ class Participant(db.Model, SanityVersion):
 			return
 
 		self.failedQuali = True
+		self.introPos = 0 # -1 would show the very first slide, but the slide does not make sense for repetition
 
 
 	def getPhaseName(self) -> str:
