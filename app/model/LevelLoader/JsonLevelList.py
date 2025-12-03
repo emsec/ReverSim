@@ -54,9 +54,11 @@ class JsonLevelList(LevelLoader):
 			current_list = MappingProxyType(self.levelList[list_name])
 
 			for entry in current_list['levels']:
+				# If this is a list, add all levels that are contained in that list
 				if isinstance(entry, list):
 					for subEntry in cast(list[dict[str, str]], entry):
-						levels.append(Level(type=subEntry['type'], fileName=subEntry['name']))	
+						levels.append(Level(type=subEntry['type'], fileName=subEntry['name']))
+				# Else add the single level
 				else:
 					levels.append(Level(type=entry['type'], fileName=entry['name']))
 
@@ -152,7 +154,8 @@ class JsonLevelList(LevelLoader):
 		try:
 			conf = load_config(fileName=fileName, instanceFolder=instanceFolder)
 
-			# TODO Run checks
+			# TODO Run checks to catch any errors directly on launch and not later when
+			# someone tries to load the first level
 
 			logging.info(f'Successfully loaded {len(conf)} level lists.')
 			return conf
