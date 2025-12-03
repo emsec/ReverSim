@@ -24,12 +24,13 @@ volumes:
 services:
   # the container will be named reversim_game when launched
   game:
-    # adjust this, if you wan't to pull a different version/tag of the game
-    image: ghcr.io/emsec/reversim:${REVERSIM_TAG:-latest}
+    image: reversim
+    pull_policy: build
+    build: .
     restart: unless-stopped
 
     ports:
-      - "${REVERSIM_PORT:-8000}:8000" # outside:inside container
+      - "8000:8000" # outside:inside container
     
     # mount your volumes here
     volumes:
@@ -63,4 +64,76 @@ services:
         # after 3 unsuccessful restart attempts, assume the container is unable to start and give up
         max_attempts: 3
 
-  
+    develop:
+      watch:
+        - action: rebuild
+          path: app/
+
+  # WARNING: This is just a demo instance, no data is persisted as there is no volume mounted!
+  prometheus:
+    image: prom/prometheus
+    # Containers inside the compose can always access the metrics. You only need this line for access from the outside
+    #ports:
+    #  - 9090:9090
+    configs:
+      # https://github.com/prometheus/prometheus/issues/3441
+      - source: prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        uid: "65534"
+    profiles:
+      - grafana
+    #entrypoint: ["ls", "-lan", "/etc/prometheus"]
+
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - 3000:3000
+    configs:
+      - source: grafana_datasources.yml
+        target: /etc/grafana/provisioning/datasources/automatic.yml
+      - source: grafana_dashboard.yml
+        target: /etc/grafana/provisioning/dashboards/reversim.yml
+      - source: grafana_dashboard_essentials
+        target: /var/lib/grafana/dashboards/grafana-dashboard.json
+      
+    profiles:
+      - grafana
+
+configs:
+  # NOTE: The prometheus and game hostname only works inside this compose stack
+  prometheus.yml:
+    content: |
+      global:
+        scrape_interval:     15s # By default, scrape targets every 15 seconds.
+        evaluation_interval: 15s # Evaluate rules every 15 seconds.
+
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['game:8000']
+
+  grafana_datasources.yml:
+    content: |
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus:9090
+          editable: true
+
+  grafana_dashboard_essentials:
+    file: examples/grafana-dashboard-provisioned.json
+
+  grafana_dashboard.yml:
+    content: |
+      apiVersion: 1
+
+      providers:
+        - name: 'ReverSim'
+          orgId: 1
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          # Provisioned Dashboards will override your changes, therefore we disable it
+          allowUiUpdates: false
+          options:
+            path: /var/lib/grafana/dashboards/grafana-dashboard.json

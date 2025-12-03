@@ -14,9 +14,9 @@ from app.utilsGame import LevelType, PhaseType, get_git_revision_hash, safe_join
 # 
 # Group names are case insensitive. They will always be converted to lower case internally (however you should use lower case for group names in the config!)
 
-# CONFIG Current Log File Version
-# 1.Milestone.Subversion
-LOGFILE_VERSION = "2.0.4"
+# CONFIG Current Log File Version. 
+# NOTE Also change this in the Dockerfile
+LOGFILE_VERSION = "2.1.0" # Major.Milestone.Subversion
 
 PSEUDONYM_LENGTH = 32
 LEVEL_ENCODING = 'UTF-8' # was Windows-1252
@@ -24,9 +24,21 @@ TIME_DRIFT_THRESHOLD = 200 # ms
 STALE_LOGFILE_TIME = 48 * 60 * 60 # close logfiles after 48h
 MAX_ERROR_LOGS_PER_PLAYER = 25
 
+# Number of seconds, after which the player is considered disconnected. A "Back Online"
+# message will be printed to the log, if the player connects afterwards. Also used for the
+# Prometheus Online Player Count metric
+BACK_ONLINE_THRESHOLD_S = 5.0 # [s]
+
+# The interval at which prometheus metrics without an event source shall be updated
+METRIC_UPDATE_INTERVAL = 1 # [s]
+
 # NOTE: This is used when the client needs to request assets from the server. If you need
 # the server side asset folder, use gameConfig.getAssetPath()
 REVERSIM_STATIC_URL = "/assets"
+
+DEFAULT_FOOTER = {
+	"researchInfo": REVERSIM_STATIC_URL + "/researchInfo/researchInfo.html"
+}
 
 class GroupNotFound(Exception):
 	"""Raised when a group is requested, which is not in the config"""
@@ -89,7 +101,7 @@ def getDefaultGamerules() -> dict[str, Optional[Union[str, int, bool, dict[str, 
 		
 		"allowRepetition": False,
 
-		"footer": getFooter(),
+		"footer": DEFAULT_FOOTER,
 
 		"urlPreSurvey": None,
 		"urlPostSurvey": None,
@@ -98,26 +110,34 @@ def getDefaultGamerules() -> dict[str, Optional[Union[str, int, bool, dict[str, 
 	}
 
 # Default gamerules, will be overridden by the gamerules defined inside the group
-gameruleDefault = None
+gameruleDefault = getDefaultGamerules()
 
 
-def loadConfig(configName: str = "conf/gameConfig.json", instanceFolder: str = 'instance'):
+def load_config(fileName: str, instanceFolder: str|None = None) -> dict[str, Any]:
+	"""Helper to load a JSON configuration relative to the Flask instance folder into a `dict`"""
+	
+	if instanceFolder is None:
+		instanceFolder = getInstanceFolder()
+
+	configPath = safe_join(instanceFolder, fileName)
+	with open(configPath, "r", encoding=LEVEL_ENCODING) as f:
+		# Load Config file & fill default gamerules
+		logging.info(f'Loading config "{configPath}"...')
+		return json.load(f)
+
+
+def loadGameConfig(configName: str = "conf/gameConfig.json", instanceFolder: str = 'instance'):
 	"""Read gameConfig.json into the config variable"""
 	global __configStorage, __instance_folder
 	__instance_folder = instanceFolder
 
 	# load the config (groups, gamerules etc.)
 	try:
-		configPath = safe_join(instanceFolder, configName)
-		with open(configPath, "r", encoding="utf-8") as f:
-			# Load Config file & fill default gamerules
-			logging.info('Loading config "' + configPath + '"...')
-			__configStorage = json.load(f)
-			gameruleDefault = getDefaultGamerules()
+		__configStorage = load_config(fileName=configName, instanceFolder=instanceFolder)
 
-			# Get Git Hash from Config
-			__configStorage['gitHash'] = get_git_revision_hash(shortHash=True)
-			logging.info("Game Version: " + LOGFILE_VERSION + "-" + getGitHash())
+		# Get Git Hash from Config
+		__configStorage['gitHash'] = get_git_revision_hash(shortHash=True)
+		logging.info("Game Version: " + LOGFILE_VERSION + "-" + getGitHash())
 
 		# Validate and initialize all groups / add default gamerule
 		for g in __configStorage['groups']:
@@ -255,9 +275,6 @@ def getDefaultLang() -> str:
 
 def getFooter() -> Dict[str, str]:
 	"""Get the footer from the config or return the Default Footer if none is specified"""
-	DEFAULT_FOOTER = {
-		"researchInfo": REVERSIM_STATIC_URL + "/researchInfo/researchInfo.html"
-	}	
 	return config('footer', DEFAULT_FOOTER)
 
 
@@ -301,6 +318,14 @@ def getGroupsDisabledErrorLogging() -> list[str]:
 		]
 
 
+def getLevelList(name: str):
+	"""Get a level list in the new format"""
+	try:
+		return __configStorage['levels'][name]
+	except KeyError:
+		raise GroupNotFound("Could not find the level list with name '" + name + "'!")
+	
+
 #########################
 #   Phase Constants     #
 #########################
@@ -329,18 +354,18 @@ ALL_LEVEL_TYPES: dict[str, str] = {
 # NOTE Special case: 'text' is written in the level list, but 'info' is send to the server, 
 # see doc/Overview.md#levels-info-screens-etc
 REMAP_LEVEL_TYPES = {
-	'text': 'info'
+	'text': LevelType.INFO
 }
 
 # The new types for the Alternative Task shall also be treated as levels aka tasks
-LEVEL_FILETYPES_WITH_TASK = ['level', 'url', 'iframe']
+LEVEL_FILETYPES_WITH_TASK = [LevelType.LEVEL, LevelType.URL, LevelType.IFRAME]
 
 LEVEL_BASE_FOLDER = 'levels'
-LEVEL_FILE_PATHS = {
-	'level': 		LEVEL_BASE_FOLDER + '/differentComplexityLevels/',
-	'info': 		LEVEL_BASE_FOLDER + '/infoPanel/',
-	'tutorial': 	LEVEL_BASE_FOLDER + '/elementIntroduction/',
-	'special': 		LEVEL_BASE_FOLDER + '/special/'
+LEVEL_FILE_PATHS: dict[str, str] = {
+	LevelType.LEVEL: 		LEVEL_BASE_FOLDER + '/differentComplexityLevels/',
+	LevelType.INFO: 		LEVEL_BASE_FOLDER + '/infoPanel/',
+	LevelType.TUTORIAL: 	LEVEL_BASE_FOLDER + '/elementIntroduction/',
+	LevelType.SPECIAL: 		LEVEL_BASE_FOLDER + '/special/'
 }
 
 # config name for the pause timer

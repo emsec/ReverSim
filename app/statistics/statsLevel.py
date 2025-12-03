@@ -7,8 +7,6 @@ from app.statistics.statisticUtils import TIME_NONE, LogSyntaxError, calculateDu
 from app.statistics.staticConfig import ENABLE_SPECIAL_CASES
 from app.utilsGame import X_TRUE, X_FALSE
 
-from app.statistics.specialCases import specialCase4, specialCase9
-
 LEVEL_ATTRIB_T = Dict[str, Union[bool, int, LevelStatus, datetime]]
 
 class StatsLevel():
@@ -177,19 +175,15 @@ class StatsLevel():
 					+ ", client send " + str(int(event["Nmbr Switch Clicks"])) + "!")
 
 		if self.stats['confirmClicks'] != int(event["Nmbr Confirm Clicks"]):
-			# Special case 09
-			if not specialCase9(self, event):
-				raise LogSyntaxError("Discrepancy in confirm clicks: Server recorded " + \
-						str(self.stats['confirmClicks']) + ", client send " + str(int(event["Nmbr Confirm Clicks"])) \
-						+ "!")
+			raise LogSyntaxError("Discrepancy in confirm clicks: Server recorded " + \
+					str(self.stats['confirmClicks']) + ", client send " + str(int(event["Nmbr Confirm Clicks"])) \
+					+ "!")
 
 		if self.stats['switchClicks'] < self.stats['minSwitchClicks'] \
 				and not self.stats['skipped'] \
 				and not self.stats['status'] == LevelStatus.FAILED:
 			
-			# Special case 04: Allow switch click deviation
-			if not specialCase4():
-				raise LogSyntaxError("Somehow the user managed to click fewer switches than required!")
+			raise LogSyntaxError("Somehow the user managed to click fewer switches than required!")
 
 
 	def onSkip(self, event: EVENT_T):

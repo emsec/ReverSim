@@ -4,23 +4,21 @@ from typing import Optional
 from prometheus_client import Gauge
 
 from app.config import MAX_ERROR_LOGS_PER_PLAYER, PSEUDONYM_LENGTH
-from app.storage.participantsDict import existsInMemory
+from app.prometheusMetrics import ServerMetrics
+from app.storage.participantsDict import exists
 from app.utilsGame import now
 
-crashMetric: Optional[Gauge] = None
 crashReportFile: Optional[TextIOWrapper] = None
 
 crashCounts: dict[int, int] = {}
 groupBlacklist: list[str]
 
-def openCrashReporterFile(filePath: str, p_groupBlacklist: list[str], p_crashMetrics: Optional[Gauge], errorLevel: int):
+def openCrashReporterFile(filePath: str, p_groupBlacklist: list[str], errorLevel: int):
 	"""Open the error log file in text append mode and write a message"""
 	global crashReportFile
 	global groupBlacklist
-	global crashMetric
 
 	groupBlacklist = p_groupBlacklist
-	crashMetric = p_crashMetrics
 
 	try:
 		# NOTE: Not using a with statement, since the logfile shall stay open
@@ -48,7 +46,7 @@ def writeCrashReport(pseudonym: str, group: str, timestamp: int, message: str, s
 	san_trace = stackTrace.splitlines(keepends=False)
 
 	# reject if pseudonym is unknown
-	if not existsInMemory(san_pseudonym):
+	if not exists(san_pseudonym):
 		return False
 	
 	# reject, if the player threw too many errors
@@ -58,7 +56,7 @@ def writeCrashReport(pseudonym: str, group: str, timestamp: int, message: str, s
 		return False
 
 	# Update the Prometheus metrics
-	updateCrashMetrics()
+	ServerMetrics.incrementCrashMetrics()
 
 	# Increase the logged errors counter and return success
 	crashCounts[int(pseudonym[:PSEUDONYM_LENGTH], base=16)] += 1
@@ -91,12 +89,3 @@ def isCrashReporterEnabled(groupName: str) -> bool:
 		return False
 	
 	return True
-
-
-def updateCrashMetrics():
-	"""Update the Prometheus metric for client errors/crashes"""
-	try: 
-		if crashMetric is not None:
-			crashMetric.inc() # Increment the `reversim_client_errors` metric
-	except:
-		pass

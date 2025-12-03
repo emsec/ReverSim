@@ -1,3 +1,4 @@
+import logging
 import sys
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -142,7 +143,7 @@ class Participant(db.Model, SanityVersion):
 			if newGroup is not None:
 				self.setGroup(newGroup, timeStamp)
 			else:
-				print("Error: No new group could be determined. Is the SkillGroups entry empty?")
+				logging.error("Error: No new group could be determined. Is the SkillGroups entry empty?")
 
 		return self.loadPhase(timeStamp)
 
@@ -191,10 +192,11 @@ class Participant(db.Model, SanityVersion):
 		scene where he left.
 		"""
 		if self.getPhaseName() != PhaseType.Quali:
-			print("Failed quali " + self.pseudonym + " but current phase is " + self.getPhaseName() + "!")
+			logging.error("Failed quali " + self.pseudonym + " but current phase is " + self.getPhaseName() + "!")
 			return
 
 		self.failedQuali = True
+		self.introPos = 0 # -1 would show the very first slide, but the slide does not make sense for repetition
 
 
 	def getPhaseName(self) -> str:

@@ -9,6 +9,7 @@ from werkzeug import Response
 
 # import the other modules, belonging to this app
 import app.config as gameConfig
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 import app.router.routerGame as routerGame
 
 # import all routes, belonging to this app
@@ -61,7 +62,6 @@ def createCrashReporter(app: Flask):
 		openCrashReporterFile(
 			crashReporterFilePath,
 			gameConfig.getGroupsDisabledErrorLogging(),
-			ServerMetrics.met_clientErrors,
 			errorLevel=gameConfig.getInt('crashReportLevel')
 		)
 
@@ -112,7 +112,8 @@ def createMinimalApp():
 
 	# Load game config
 	REVERSIM_CONF = os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json")
-	gameConfig.loadConfig(REVERSIM_CONF, app.instance_path)
+	gameConfig.loadGameConfig(REVERSIM_CONF, app.instance_path)
+	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=app.instance_path)
 
 	return app
 
@@ -143,7 +144,11 @@ def createApp():
 	initLegacyLogFile(app)
 
 	# Init Prometheus (must be done before Flask context is created)
-	ServerMetrics.createPrometheus(app)
+	try:
+		ServerMetrics.createPrometheus(app)
+	except Exception as e:
+		logging.warning(f'The Prometheus metrics failed to initialize: "{e}"')
+		logging.warning('This can be safely ignored when not in production')
 
 	return app
 

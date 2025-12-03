@@ -10,14 +10,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from flask import json
 import app.config as gameConfig
+from app.model.Level import Level
+from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.statistics.activeLogfile import LogfileInfo
 from app.statistics.csvFile import CSVFile
 from app.statistics.screenshots import checkScreenshots, countScreenshotsInLog, countScreenshotsOnDisk
-from app.statistics.specialCases import specialCase3_5_8_10, specialCase7
 from app.statistics.statsLevel import FILE_TYPES_WITH_SWITCHES
 from app.statistics.statsParticipant import StatsParticipant
 from app.statistics.staticConfig import MAX_LOGFILE_SIZE, LevelStatus
-from app.statistics.statisticUtils import LogFiltered, LogSyntaxError, gatherPseudonym, gatherVersion, parseLogfile, removeprefix, stripLevelName
+from app.statistics.statisticUtils import LogFiltered, LogSyntaxError, gatherGroup, gatherPseudonym, gatherVersion, parseLogfile, removeprefix
 from app.statistics.statsPhase import StatsPhase
 from app.utilsGame import EventType, LogKeys, getShortPseudo
 
@@ -363,14 +364,11 @@ def generateStatistics(log: List[Dict[str, Any]], pseudonym: str, version: str, 
 
 		# Make sure no Filename ends with .txt
 		if LogKeys.FILENAME in event:
-			event[LogKeys.FILENAME] = stripLevelName(event[LogKeys.FILENAME])
+			event[LogKeys.FILENAME] = Level.uniformName(event[LogKeys.FILENAME])
 
 		# NOTE: You can mark some events to be skipped, e.g. because they have been handled earlier
 		if int(event[LogKeys.ORIGIN_LINE]) < -100:
 			continue
-		
-		# Special case 03, 05, 08 and 10
-		specialCase3_5_8_10(participant, log, event, i, version)
 
 		# Handle the current event
 		try:
@@ -410,8 +408,10 @@ def stitchLogfiles(participants: list[StatsParticipant], stitchOrder: Dict[str, 
 		psdnm = participants[i].pseudonym
 		if psdnm in sourcePseudonyms:
 			sourceData[psdnm] = participants[i]
-			try: logStats['outputLogs'].remove(psdnm)
-			except Exception: pass
+			try: 
+				logStats['outputLogs'].remove(psdnm)
+			except Exception: 
+				pass
 			logStats['restitched'].append(psdnm)
 			participants.pop(i)
 		else:
@@ -431,7 +431,7 @@ def stitchLogfiles(participants: list[StatsParticipant], stitchOrder: Dict[str, 
 				sourceLevels = source[1:]
 				try: 
 					sourceParticipant = sourceData[sourcePseudo]
-				except KeyError as e:
+				except KeyError:
 					lfn = sourcePseudo #"logFile_" + sourcePseudo + ".txt"
 					msg = " failed validation" if lfn in logStats["errorLogs"] else " pseudonym does not exist!"
 					raise KeyError(sourcePseudo + msg)
@@ -463,7 +463,7 @@ def stitchLogfiles(participants: list[StatsParticipant], stitchOrder: Dict[str, 
 					if d.type in FILE_TYPES_WITH_SWITCHES 
 					and d.getStatus() not in NEVER_STARTED_STATES
 				]
-				print(getShortPseudo(sourcePseudo) + ": " + str([l.name for l in allDataSets]) + ", " + str(sourceLevels))
+				print(getShortPseudo(sourcePseudo) + ": " + str([dataset.name for dataset in allDataSets]) + ", " + str(sourceLevels))
 
 			assert newParticipant is not None
 			logStats["outputLogs"].append(destPseudo)
@@ -471,26 +471,6 @@ def stitchLogfiles(participants: list[StatsParticipant], stitchOrder: Dict[str, 
 			logging.info('Stitched "' + destPseudo + '" from ' + str(len(sources)) + " logs.")
 		except Exception as e:
 			logging.error("Could not stitch " + destPseudo + ': "' + str(e) + '"')
-
-
-def gatherGroup(log: List[Dict[str, Any]], pseudonym: str, version: str) -> str:
-	"""Get the group from the log"""
-	# TODO Replace with version from statisticUtils.py when Special case is removed
-	assert len(log) > 0
-	group = None
-
-	for i in range(0, min(9, len(log))):
-		if log[i]['Event'] == "Group Assignment":
-			group = str(log[i]['Group'])
-			break
-
-	# Special case 07
-	specialCase7(log, version=version, pseudonym=pseudonym, group=group)
-
-	if group is None:
-		raise LogSyntaxError("The group assignment is missing from the logs (v" + version + ")!")
-
-	return group
 
 
 def main():
@@ -538,7 +518,10 @@ def main():
 
 	# Dynamically load the csv generator
 	try:
-		csvGenerator = importlib.import_module('app.statistics.csvGenerator.' + args.csvGenerator)
+		try:
+			csvGenerator = importlib.import_module('app.statistics.csvGenerator.' + args.csvGenerator)
+		except ModuleNotFoundError: 
+			csvGenerator = importlib.import_module(args.csvGenerator)
 		header = csvGenerator.header
 		groupFilter = csvGenerator.groupFilter
 		attributes = csvGenerator.attributes
@@ -548,9 +531,16 @@ def main():
 		logging.critical(str(e))
 		exit(-42)
 
+	INSTANCE_FOLDER = os.path.abspath(os.environ.get("REVERSIM_INSTANCE", "./instance"))
+
 	# Load the game config
-	os.environ.setdefault("REVERSIM_CONFIG", location_gameConfig)
-	gameConfig.loadConfig(location_gameConfig)
+	gameConfig.loadGameConfig(
+		configName=os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json"),
+		instanceFolder=INSTANCE_FOLDER
+	)
+	
+	# Cache the levelList file
+	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=INSTANCE_FOLDER)
 
 	# Load the log parser config
 	logParserConfig: Dict[str, Any] = {}
@@ -558,6 +548,8 @@ def main():
 		try:
 			with open(args.config, "r", encoding="utf-8") as f:
 				logParserConfig = json.load(f)
+		except FileNotFoundError:
+			logging.info(f'"{args.config}" not found, ignoring')
 		except Exception as e:
 			logging.exception(e)
 
@@ -568,7 +560,7 @@ def main():
 		vipLogs = sorted(logParserConfig[VIP_LOG_KEY])
 
 	# Prepare the csv 
-	fileName = 'statistics_' + args.csvGenerator +'.csv'
+	fileName = 'statistics_' + getattr(csvGenerator, 'name', args.csvGenerator) +'.csv'
 	outputFile = CSVFile(fileName, csvGenerator.header, csvGenerator.attributes, levelHeaderFormat)
 	outputFile.checkOutputFile()
 
@@ -598,7 +590,8 @@ def main():
 
 		for psdnm, rcons in reconnects.items():
 			for r in rcons:
-				if r == "Start": continue
+				if r == "Start": 
+					continue
 				logging.info(f'{getShortPseudo(psdnm)}: {r}')
 
 		print("")
@@ -635,7 +628,7 @@ def main():
 	for p in participants:
 		try:
 			outputFile.appendParticipant(p)
-		except Exception as e:
+		except Exception:
 			traceback.print_exc()
 
 	# Sanity Check: Make sure the length of the output logs match the expectations	
@@ -655,8 +648,8 @@ def main():
 			if ps in vipLogErrors else getShortPseudo(ps) + "...:xxxx Unknown???" \
 			for ps in vipLogs if 'logFile_' + ps + ".txt" not in logStats['outputLogs']
 		]
-		for l in logs:
-			print(l)
+		for log in logs:
+			print(log)
 
 
 	# Print a newline at the end

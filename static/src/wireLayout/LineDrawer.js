@@ -3,6 +3,12 @@
  */
 class LineDrawer extends Phaser.GameObjects.GameObject
 {
+	/**
+	 * 
+	 * @param {Phaser.Scene} scene The parent `Phaser.Scene`.
+	 * @param {Wire[]} wires The list of wires to draw in Manhattan/Cityblock style.
+	 * @param {boolean} showState Display if the wire conducts current (logical 1) or is off (logical 0).
+	 */
 	constructor(scene, wires, showState)
 	{
 		super(scene, 'line_drawer');

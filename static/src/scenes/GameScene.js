@@ -579,6 +579,7 @@ class GameScene extends BaseScene
 			{
 				JsonRPC.que("simulate", {"status": 1, "user": 1})
 				this.updateScore('simulate');
+				this.level.stats.simulateCtr++;
 			}
 
 			// Show simulate button and disable input

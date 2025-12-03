@@ -108,7 +108,7 @@ class CSVFile:
 		https://owasp.org/www-community/attacks/CSV_Injection
 		"""
 		# TODO prevent CSV injection
-		if entry == None:
+		if entry is None:
 			return ''#TABLE_NAN
 
 		elif isinstance(entry, str):
@@ -232,25 +232,27 @@ def getLevelAttributes(
 
 	# Iterate over all levels in the specified phase
 	i = 0
-	for l in phase.levels:
+	for level in phase.levels:
 		# Skip everything that is not a task
-		if not l.isTask(): continue
+		if not level.isTask(): 
+			continue
+
 		i += 1
 		globalLevelIndex += 1
 		
 		# Append the level name to the legend
-		if l.name not in legend[groups]:
-			legend[groups].append(l.name)
+		if level.name not in legend[groups]:
+			legend[groups].append(level.name)
 
 		# Make sure the level name matches the legend, because that information cannot be reconstructed in a later step
-		assert l.name == legend[groups][globalLevelIndex - 1], "Fatal, the level name does not match the legend!"
+		assert level.name == legend[groups][globalLevelIndex - 1], "Fatal, the level name does not match the legend!"
 
 		# Create the column header belonging to this entry
 		outLevelHeader.extend([gLevelHeaderFormat % {
 			'th': lh, 
 			'levelIdx': i,
 			'globalIdx': globalLevelIndex,
-			'levelName': l.name,
+			'levelName': level.name,
 			'phaseName': phase.name
 		} for lh in levelHeader])
 
@@ -258,7 +260,7 @@ def getLevelAttributes(
 		for a in levelAttributes:
 			entry = ">>> UNDEFINED <<<"
 			try:
-				entry = a(participant, phase, l)
+				entry = a(participant, phase, level)
 
 			except Exception as e:
 				entry = ">>> ERROR <<<"
@@ -270,7 +272,7 @@ def getLevelAttributes(
 	# Display a warning if the program thinks the user messed up the header
 	if not warningLevelHeaderName and not tmpHeader[len(tmpHeader)-1].startswith('LEVELS'):
 		warningLevelHeaderName = True
-		logging.warn("The header entry that will get replaced with the level header did not start with 'LEVELS' (" + \
+		logging.warning("The header entry that will get replaced with the level header did not start with 'LEVELS' (" + \
 			tmpHeader[len(tmpHeader)-1] + ")!")
 
 	# Pop the LEVELS_... placeholder from the header and extend it with the levels header

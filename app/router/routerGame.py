@@ -24,6 +24,7 @@ from app.storage.database import db
 
 routerGame = Blueprint('gameRoutes', __name__)
 
+
 # send back the index.html file
 @routerGame.route('/') # type: ignore
 def index() -> Response:
@@ -60,7 +61,7 @@ def redirectToGame():
 	lang = sanitizeString(request.args.get('lang', default=gameConfig.getDefaultLang()))
 	
 	# If the pseudonym is invalid, ask the user to generate a new one
-	if not participantsDict.existsInMemory(ui):
+	if not participantsDict.exists(ui):
 		return 'Invalid or unknown pseudonym. Please generate a new one by going <a href="' + \
 				getDefaultUrl(request) + '">back</a>.', 400
 
@@ -185,7 +186,7 @@ def redirectToPostSurvey():
 	lang = sanitizeString(request.args.get('lang', default=gameConfig.getDefaultLang()))
 	timeStamp = str(now()) # sanitizeString(request.args.get('timeStamp')) #DONE don't trust the client timestamp here
 
-	if not participantsDict.existsInMemory(ui):
+	if not participantsDict.exists(ui):
 		return 'invalid ui', 400
 
 	participant = participantsDict.get(ui)
@@ -232,7 +233,7 @@ def saveCanvasImage():
 
 	pseudonym = sanitizeString(request.form['pseudonym'])
 
-	if not participantsDict.existsInMemory(pseudonym):
+	if not participantsDict.exists(pseudonym):
 		return 'Invalid pseudonym', 400
 
 	participant = participantsDict.get(pseudonym)
@@ -426,28 +427,27 @@ def testConnection():
 	serverTime = now()
 
 	try:
-		if participantsDict.existsInMemory(pseudonym):
-			participant = participantsDict.get(pseudonym)
-			t = participant.lastConnection
-			elapsed = (serverTime - t) / 1000 
+		participant = participantsDict.get(pseudonym)
+		t = participant.lastConnection
+		elapsed = (serverTime - t) / 1000 
 
-			if elapsed >= 5:
-				participant.logger.writeToLog(EventType.BackOnline, '§Duration[s]: ' + str(elapsed), timeStamp)
+		if elapsed >= gameConfig.BACK_ONLINE_THRESHOLD_S:
+			participant.logger.writeToLog(EventType.BackOnline, '§Duration[s]: ' + str(elapsed), timeStamp)
 
-				event = ReconnectEvent(
-					clientTime=int(timeStamp), serverTime=serverTime,
-					pseudonym=pseudonym,
-					elapsed=elapsed
-				)
-				event.commit()
+			event = ReconnectEvent(
+				clientTime=int(timeStamp), serverTime=serverTime,
+				pseudonym=pseudonym,
+				elapsed=elapsed
+			)
+			event.commit()
 
-			participant.lastConnection = serverTime
+		participant.lastConnection = serverTime
 
-			# Flask-SQLAlchemy does not commit at the end of a session...
-			db.session.commit()
+		# Flask-SQLAlchemy does not commit at the end of a session...
+		db.session.commit()
 
-			return 'pong'
-	except KeyError:
+		return 'pong'
+	except (KeyError, ValueError):
 		pass
 
 	return 'invalid pseudonym', 406

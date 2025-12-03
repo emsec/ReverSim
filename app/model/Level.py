@@ -108,8 +108,8 @@ class Level(db.Model, TimerMixin):
 
 
 	def getName(self) -> str:
-		"""Name of the level with no file extension. 
-		
+		"""The uniform name of the level with no file extension. 
+
 		Replace the folder separators if you want to use it inside a folder path.
 		"""
 		return Level.uniformName(self.fileName)
@@ -188,6 +188,7 @@ class Level(db.Model, TimerMixin):
 			return safe_join(gameConfig.getAssetPath(), LEVEL_FILE_PATHS[type])
 		else:
 			return safe_join(gameConfig.getAssetPath(), LEVEL_BASE_FOLDER)
+
 
 KEY_CAMOUFLAGE = 'camouflage'
 KEY_COVERT = 'covert'

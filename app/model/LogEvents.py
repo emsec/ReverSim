@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from typing import Annotated, Any, ClassVar, Optional
 
 from sqlalchemy import JSON, DateTime, Enum, ForeignKey, SmallInteger, String, Text
@@ -181,7 +182,7 @@ class LogEventPhase(LogEvent):
 		self.phase = db.session.get(PhaseContext, phaseName)
 
 		if self.phase is None:
-			print(f'Created phase "{phaseName}".')
+			logging.info(f'Created phase "{phaseName}".')
 			self.phase = PhaseContext(phaseName)
 			db.session.add(self.phase)
 			db.session.commit()
@@ -222,7 +223,7 @@ class LogEventLevel(LogEventPhase):
 		})
 
 		if self.level is None:
-			print(f'Created level "{levelName}" ({levelType}).')
+			logging.info(f'Created level "{levelName}" ({levelType}).')
 			self.level = LevelContext(levelType=levelType, levelName=levelName)
 			db.session.add(self.level)
 			db.session.commit()

@@ -11,11 +11,14 @@ ENV GAME_GIT_HASH=$GAME_GIT_HASH
 ARG GAME_GIT_HASH_SHORT
 ENV GAME_GIT_HASH_SHORT=$GAME_GIT_HASH_SHORT
 
+ARG PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
+
 # Labels as per:
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
 MAINTAINER Max Planck Institute for Security and Privacy
 LABEL org.opencontainers.image.authors="Max Planck Institute for Security and Privacy"
-LABEL org.opencontainers.image.version="2.0.4"
+# NOTE Also change the version in config.py
+LABEL org.opencontainers.image.version="2.1.0"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 LABEL org.opencontainers.image.description="Ready to deploy Docker container to use ReverSim for research. ReverSim is an open-source environment for the browser, originally developed at the Max Planck Institute for Security and Privacy (MPI-SP) to study human aspects in hardware reverse engineering."
 LABEL org.opencontainers.image.source="https://github.com/emsec/ReverSim"
@@ -52,14 +55,17 @@ WORKDIR /usr/var/reversim-instance
 COPY examples/conf conf
 COPY instance/conf conf
 
+# Setup for Prometheus multiprocessing
+WORKDIR ${PROMETHEUS_MULTIPROC_DIR}
+ENV PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR}
+
 # Create empty statistics folders
 WORKDIR /usr/var/reversim-instance/statistics/LogFiles
 WORKDIR /usr/var/reversim-instance/statistics/canvasPics
 WORKDIR /usr/src/hregame
 
-# Specify mount points for the statistics folder, game config, levels, researchInfo & disclaimer
+# Specify mount points for the statistics folder, levels, researchInfo & disclaimer
 VOLUME /usr/var/reversim-instance/statistics
-VOLUME /usr/var/reversim-instance/conf
 VOLUME /var/log/uwsgi
 
 # Exposes the port that uWSGI is listening to (as configured in hre_game.ini)
