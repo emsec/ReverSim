@@ -11,6 +11,7 @@ from werkzeug import Response
 import app.config as gameConfig
 from app.model.LevelLoader.JsonLevelList import JsonLevelList
 import app.router.routerGame as routerGame
+from app.authentication import auth, populate_data
 
 # import all routes, belonging to this app
 import app.router.routerStatic as routerStatic
@@ -139,13 +140,17 @@ def createApp():
 	# Init the Database
 	ReverSimDatabase.createDatabase(app)
 
+	# Generate the default Bearer token for the /metrics endpoint
+	with app.app_context():
+		populate_data(instance_path=app.instance_path)
+
 	# Init the Legacy logger and Screenshots
 	initScreenshotWriter(app)
 	initLegacyLogFile(app)
 
 	# Init Prometheus (must be done before Flask context is created)
 	try:
-		ServerMetrics.createPrometheus(app)
+		ServerMetrics.createPrometheus(app, auth_provider=auth.login_required) # type: ignore
 	except Exception as e:
 		logging.warning(f'The Prometheus metrics failed to initialize: "{e}"')
 		logging.warning('This can be safely ignored when not in production')
