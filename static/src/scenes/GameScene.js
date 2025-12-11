@@ -721,7 +721,7 @@ ${languageDict['yourScore'][gameLanguage]} ${this.level.stats.score.toString()} 
 		let str = 
 `${textBestClicks} ${this.level.minimalHammingDistance.toString()}
 
-${textYourScore} ${this.level.stats.score.toString()}
+${textYourScore} ${this.level.stats.score.toString()} / 100
 `;
 		if(scoreValues.switchClick != 0)
 			str += `\n${textSwitchClicks} ${scoreValues.switchClick != 0 ? this.level.getBestScorePossible() : ''}`;
