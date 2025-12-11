@@ -1,6 +1,7 @@
 import logging
 from threading import Thread
 import time
+from typing import Any
 from flask import Flask
 
 # Prometheus Metrics
@@ -14,13 +15,14 @@ import app.storage.participantsDict as participantsDict
 
 class ServerMetrics:
 	@staticmethod
-	def __prometheusFactory():
+	def __prometheusFactory(auth_provider: Any):
 		EXCLUDED_PATHS = ["/?res\\/.*", "/?src\\/.*", "/?doc\\/.*"]
 		
 		# Try to use the uWSGI exporter. This will fail, if uWSGI is not installed
 		try:
 			metrics = UWsgiPrometheusMetrics.for_app_factory( # type: ignore
-				excluded_paths=EXCLUDED_PATHS
+				excluded_paths=EXCLUDED_PATHS,
+				metrics_decorator=auth_provider
 			)
 
 		# Use the regular Prometheus exporter
@@ -28,13 +30,14 @@ class ServerMetrics:
 			logging.error(e)
 
 			metrics = PrometheusMetrics.for_app_factory( # type: ignore
-				excluded_paths=EXCLUDED_PATHS
+				excluded_paths=EXCLUDED_PATHS,
+				metrics_decorator=auth_provider
 			)
 
 		logging.info(f'Using {type(metrics).__name__} as the Prometheus exporter')
 		return metrics
 
-	metrics = __prometheusFactory()
+	metrics: PrometheusMetrics|UWsgiPrometheusMetrics|None = None
 
 	# ReverSim Prometheus Metrics
 	#met_openLogs = Gauge("reversim_logfile_count", "The number of open logfiles") # type: ignore
@@ -47,8 +50,9 @@ class ServerMetrics:
 	met_clientErrors: Gauge|None = None
 
 	@classmethod
-	def createPrometheus(cls, app: Flask):
+	def createPrometheus(cls, app: Flask, auth_provider: Any):
 		"""Init Prometheus"""
+		cls.metrics = cls.__prometheusFactory(auth_provider)
 		cls.metrics.init_app(app) # type: ignore
 		cls.metrics.info('app_info', 'Application info', version=gameConfig.LOGFILE_VERSION) # type: ignore
 		

@@ -23,6 +23,7 @@ uwsgitop
 
 # Metrics
 prometheus-flask-exporter
+Flask-HTTPAuth
 
 # Database support
 SQLAlchemy # ORM

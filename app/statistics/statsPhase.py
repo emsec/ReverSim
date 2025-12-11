@@ -11,7 +11,7 @@ from app.statistics.staticConfig import ENABLE_SPECIAL_CASES, EVENT_T, LevelStat
 from app.statistics.statisticUtils import LogSyntaxError, calculateDuration, removeprefix
 from app.statistics.statsLevel import StatsLevel
 
-from app.utilsGame import PhaseType
+from app.utilsGame import LevelType, PhaseType
 
 
 class StatsPhase:
@@ -196,22 +196,35 @@ class StatsPhase:
 		nextLevelName: str = event['Filename']
 		expectedLevelType: str = ALL_LEVEL_TYPES[self.levels[self.levelCounter].type]
 
-		# New Special Case: The old asset folder was /res
-		if nextLevelName.startswith('/res/'):
-			logging.debug(f'Old asset folder: "{nextLevelName}"')
-			nextLevelName = nextLevelName.replace('res', 'assets')
-
 		# Check if the current level type matches the expected level type
 		if nextLevelType != expectedLevelType:
 			# Tutorials might get inserted dynamically
-			if nextLevelType in [ALL_LEVEL_TYPES[SLIDE_TYPE_TUTORIAL], ALL_LEVEL_TYPES[SLIDE_TYPE_SPECIAL]]:
+			if nextLevelType in [ALL_LEVEL_TYPES[LevelType.TUTORIAL], ALL_LEVEL_TYPES[LevelType.SPECIAL]]:
 				nextLevelTypeLog = next(k for k, v in ALL_LEVEL_TYPES.items() if v == nextLevelType)
 				tut = StatsLevel(nextLevelTypeLog, nextLevelName)
 				self.levels.insert(self.levelCounter, tut)
 				nextLevel = tut
+
+			# We might have too many levels in the que, since the new JSON Level List 
+			# allows to pick one of multiple levels. Try to skip ahead to find a slide 
+			# with matching type
+			elif nextLevelType in ALL_LEVEL_TYPES[LevelType.INFO]:
+				oldLevelCounter = self.levelCounter
+				for level in self.levels[self.levelCounter:]:				
+					# Break if we found a slide with matching type
+					if ALL_LEVEL_TYPES[level.type] == nextLevelType:
+						nextLevel = self.levels[self.levelCounter]
+						assert nextLevel == level
+						break
+						
+					# Increment counter and check if we reached the end of the phase
+					self.levelCounter += 1
+					if self.levelCounter > len(self.levels)-1:
+						raise LogSyntaxError(f'Unable to find a slide of type {nextLevelType} until the end of the phase')
+
+			# Unable to find a matching slide with all edge cases, raise error
 			else:
 				raise LogSyntaxError("Expected slide of type " + expectedLevelType + ", got " + nextLevelType + " in " + self.name + "!")
-			
 
 		# If the level contains a circuit, the order might be randomized, so search for the level in the array
 		if nextLevelType in [ALL_LEVEL_TYPES['level'], ALL_LEVEL_TYPES['tutorial']]:
@@ -363,9 +376,6 @@ class StatsPhase:
 # 'concurrent', 'retrospective', 'no' or undefined
 THINKALOUD_CONFIG_OPTIONS = ['concurrent', 'retrospective']
 THINKALOUD_SLIDE_NAMES = ['thinkaloudCon', 'thinkaloudRet'] 
-
-SLIDE_TYPE_SPECIAL = 'special'
-SLIDE_TYPE_TUTORIAL = 'tutorial'
 
 INTRO_SLIDE_NAMES = ['covert', 'camouflage']
 INTRO_SLIDE_NAMES_OLD = {

@@ -18,7 +18,7 @@ ARG PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 MAINTAINER Max Planck Institute for Security and Privacy
 LABEL org.opencontainers.image.authors="Max Planck Institute for Security and Privacy"
 # NOTE Also change the version in config.py
-LABEL org.opencontainers.image.version="2.1.0"
+LABEL org.opencontainers.image.version="2.1.1"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
 LABEL org.opencontainers.image.description="Ready to deploy Docker container to use ReverSim for research. ReverSim is an open-source environment for the browser, originally developed at the Max Planck Institute for Security and Privacy (MPI-SP) to study human aspects in hardware reverse engineering."
 LABEL org.opencontainers.image.source="https://github.com/emsec/ReverSim"
@@ -62,6 +62,7 @@ ENV PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR}
 # Create empty statistics folders
 WORKDIR /usr/var/reversim-instance/statistics/LogFiles
 WORKDIR /usr/var/reversim-instance/statistics/canvasPics
+WORKDIR /usr/var/reversim-instance/secrets
 WORKDIR /usr/src/hregame
 
 # Specify mount points for the statistics folder, levels, researchInfo & disclaimer

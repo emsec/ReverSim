@@ -16,13 +16,16 @@ from app.utilsGame import LevelType, PhaseType, get_git_revision_hash, safe_join
 
 # CONFIG Current Log File Version. 
 # NOTE Also change this in the Dockerfile
-LOGFILE_VERSION = "2.1.0" # Major.Milestone.Subversion
+LOGFILE_VERSION = "2.1.1" # Major.Milestone.Subversion
 
 PSEUDONYM_LENGTH = 32
 LEVEL_ENCODING = 'UTF-8' # was Windows-1252
 TIME_DRIFT_THRESHOLD = 200 # ms
 STALE_LOGFILE_TIME = 48 * 60 * 60 # close logfiles after 48h
 MAX_ERROR_LOGS_PER_PLAYER = 25
+
+# The bearer token for the /metrics endpoint
+BEARER_TOKEN_BYTES = 32
 
 # Number of seconds, after which the player is considered disconnected. A "Back Online"
 # message will be printed to the log, if the player connects afterwards. Also used for the

@@ -34,7 +34,6 @@ services:
     # mount your volumes here
     volumes:
       - playerdata:/usr/var/reversim-instance/statistics
-      - gameConfig:/usr/var/reversim-instance/conf:ro
       #- uwsgi_logs:/var/log/uwsgi
 
     # add resource limits. You may want to tweak this for your deployment

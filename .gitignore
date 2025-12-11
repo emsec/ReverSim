@@ -21,7 +21,6 @@ __pycache__/
 env/
 venv/
 .venv/
-tmp/
 
 # --- Debugpy logs, WinMerge Backups etc.
 *.log
@@ -44,3 +43,7 @@ reversim-conf
 
 # --- Generated level thumbnails
 doc/levels
+
+# --- Don't push instance relevant configuration
+tmp/
+secrets/

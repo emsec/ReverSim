@@ -21,6 +21,7 @@ conf/
 log_merging_config.json
 dockerComposeMPI.yml
 *.csv
+reversim-conf
 
 # Debugpy logs, WinMerge Backups etc.
 *.log
@@ -28,6 +29,11 @@ dockerComposeMPI.yml
 
 # Ignore statistics folder
 statistics/
+
+# Hide deployment storage
+tmp/
+secrets/
+
 
 # Maybe ignore unnecessary code	
 # app/statistics
