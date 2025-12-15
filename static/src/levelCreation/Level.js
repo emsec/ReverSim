@@ -74,7 +74,7 @@ class Level
 	{
 		const result = this.circuit.calculateAllSolutions(true, this.initialSwitchStates);
 
-		console.log('min hd: ' + result.minHD.toString())
+		//console.log('min hd: ' + result.minHD.toString())
 		return result.minHD;
 	}
 
