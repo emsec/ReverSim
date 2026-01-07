@@ -57,7 +57,7 @@
 			}
 		},
 		{
-			"name": "Firefox & BurpProxy",
+			"name": "Firefox & Proxy",
 			"type": "firefox",
 			"request": "launch",
 			"reAttach": true,
@@ -66,19 +66,71 @@
 			"skipFiles": [
 				"static/src/externalLibraries/**"
 			],
-			"preferences": { // Burp Proxy
+			"preferences": { // Burp/mitmproxy etc.
 				"network.proxy.http": "127.0.0.1",
 				"network.proxy.http_port": 8080,
 				"network.proxy.type": 1,
 				"network.proxy.allow_hijacking_localhost": true
 			}
-		}
+		},
+		{
+			"name": "Statistics Generator",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "app.statistics.statistics2",
+			"args": [
+				"${input:statsGroup}",
+				"--log",
+				"info",
+				"${input:skipScreenshots}",
+				"--allowDebug"
+			],
+			"env": {
+				"REVERSIM_INSTANCE": "${input:instancePath}"
+			},
+			"justMyCode": true,
+			"console": "integratedTerminal",
+		},
 	],
 	"inputs": [
 		{
 			"id": "screenshotGeneratorPseudonym",
 			"description": "The pseudonym to generate the screenshots with. Create it by starting the game in a group with the level viewer.",
 			"type": "promptString"
-		}
+		},
+		{
+			"id": "statsGroup",
+			"description": "The script to be used to generate the csv file. \"app/statistics/csvGenerators/\"",
+			"type": "promptString",
+			"default": "paper"
+		},
+		{
+			"id": "statsFolder",
+			"description": "Select the folder containing the log files",
+			"type": "promptString",
+			"default": "instance/statistics"
+		},
+		{
+			"id": "skipScreenshots",
+			"type": "pickString",
+			"description": "Set this flag if the validation of the screenshots shall be skipped",
+			"default": "--skipScreenshots",
+			"options": [
+				"",
+				"--skipScreenshots"
+			]
+		},
+		{
+			"id": "configFile",
+			"description": "Select the gameConfig.json that was used for this group",
+			"type": "promptString",
+			"default": "instance/conf/gameConfig.json"
+		},
+		{
+			"id": "instancePath",
+			"description": "Select the instance folder that was used to launch the game",
+			"type": "promptString",
+			"default": "instance"
+		},
 	]
 }

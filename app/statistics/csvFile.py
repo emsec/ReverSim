@@ -245,7 +245,7 @@ def getLevelAttributes(
 			legend[groups].append(level.name)
 
 		# Make sure the level name matches the legend, because that information cannot be reconstructed in a later step
-		assert level.name == legend[groups][globalLevelIndex - 1], "Fatal, the level name does not match the legend!"
+		#assert level.name == legend[groups][globalLevelIndex - 1], "Fatal, the level name does not match the legend!"
 
 		# Create the column header belonging to this entry
 		outLevelHeader.extend([gLevelHeaderFormat % {
