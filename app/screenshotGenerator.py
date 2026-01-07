@@ -1,27 +1,36 @@
 import argparse
-from dataclasses import dataclass
-from datetime import datetime
 import itertools
 import logging
 import os
 import shutil
-from typing import Callable, Iterable, Literal
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Callable, Iterable, Literal
+
 from flask import json
 
+from app.gameConfig import GameConfig
 from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.utilsGame import LevelType
 
 try:
-	from playwright.sync_api import Playwright, Page, ConsoleMessage, sync_playwright
+	from playwright.sync_api import ConsoleMessage, Page, Playwright, sync_playwright
 except Exception:
 	print("This script depends on Playwright to create the browser screenshots.") 
 	print("Install it with `pip install playwright` or better `pip install -r requirementsDev.txt`")
 	exit(-42)
 
 try:
-	from app.utilsGame import gfmSanitizeLink, gfmSanitizeLinkText, gfmSanitizeTable, gfmTitleToFragment, get_git_revision_hash, PhaseType
+	from app.utilsGame import (
+		PhaseType,
+		get_git_revision_hash,
+		gfmSanitizeLink,
+		gfmSanitizeLinkText,
+		gfmSanitizeTable,
+		gfmTitleToFragment,
+	)
 except ModuleNotFoundError:
 	print("This script depends on `app.utilsGame` and `app.config`.")
 	print("To resolve the dependency correctly, run the script as `python -m app.screenshotGenerator`")
@@ -388,13 +397,12 @@ def markdownScreenshotWriter(levelNames: Iterable[str]):
 def getLevelsFromGroup(groupNames: list[str]):
 	"""Get all slides of type level for the specified list of groups"""
 	from app.model.Level import Level
-	import app.config as gameConfig
 
 	INSTANCE_FOLDER = os.path.abspath(os.environ.get("REVERSIM_INSTANCE", "./instance"))
 
-	gameConfig.loadGameConfig(
-		configName=os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json"),
-		instanceFolder=INSTANCE_FOLDER
+	gameConfig = GameConfig(
+		instanceFolder=INSTANCE_FOLDER,
+		configName=os.environ.get("REVERSIM_CONFIG", "conf/gameConfig.json")
 	)
 
 	global base_input_path, base_output_path
