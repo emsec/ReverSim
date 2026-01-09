@@ -458,7 +458,7 @@ def crashReport():
 	"""Called by the server when an exception escapes to the browser or `console.error()` is called"""
 	serverTime = now()
 	
-	writeCrashReport(
+	successful = writeCrashReport(
 		pseudonym=request.form.get('ui', 'Unknown'),
 		group=request.form.get('group', 'Unknown'),
 		timestamp=serverTime,
@@ -466,7 +466,10 @@ def crashReport():
 		stackTrace=request.form.get('trace', '')
 	)
 
-	return 'error information send', 200
+	if successful:
+		return 'error information send', 200
+	else:
+		return 'error information rejected', 400
 
 
 def getDefaultUrl(request: Any):

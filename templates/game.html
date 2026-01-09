@@ -141,10 +141,9 @@
 			/**
 			* Send a crash report to the server containing the pseudonym, message, source file and stack trace.
 			* @param {string} message 
-			* @param {string} origin 
 			* @param {string} trace 
 			*/
-			function sendErrorLog(message, origin, trace)
+			function sendErrorLog(message, trace)
 			{
 				try
 				{
@@ -162,7 +161,6 @@
 						"ui=" + encodeURIComponent(pseudonym) +
 						"&group=" + encodeURIComponent(group) +
 						"&message=" + encodeURIComponent(message) +
-						"&origin=" + encodeURIComponent(origin) +
 						"&trace=" + encodeURIComponent(trace)
 					);
 				}
@@ -175,7 +173,7 @@
 			// Catch all exceptions that escape into the browser
 			window.onerror = (event, source, line, column, error) =>
 			{
-				sendErrorLog(error.message, source + ':' + line + (column > 2000 ? ':' + column : ''), error.stack);
+				sendErrorLog(error.message, error.stack);
 				return false;
 			};
 
@@ -193,7 +191,7 @@
 					return; // Panic we have a problem here
 				}
 
-				sendErrorLog(args[0], "console.error", "");
+				sendErrorLog(args[0], "console.error()");
 				consoleErrorLogger.apply(console, args);
 				recursionBreaker = 0;
 			};

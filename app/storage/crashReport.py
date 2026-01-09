@@ -1,8 +1,6 @@
 from io import TextIOWrapper
 from typing import Optional
 
-from prometheus_client import Gauge
-
 from app.config import MAX_ERROR_LOGS_PER_PLAYER, PSEUDONYM_LENGTH
 from app.prometheusMetrics import ServerMetrics
 from app.storage.participantsDict import exists
@@ -10,7 +8,7 @@ from app.utilsGame import now
 
 crashReportFile: Optional[TextIOWrapper] = None
 
-crashCounts: dict[int, int] = {}
+crashCounts: dict[str, int] = {}
 groupBlacklist: list[str]
 
 def openCrashReporterFile(filePath: str, p_groupBlacklist: list[str], errorLevel: int):
@@ -39,34 +37,38 @@ def writeCrashReport(pseudonym: str, group: str, timestamp: int, message: str, s
 	else:
 		assert crashReportFile is not None
 
-	ui_num = int(pseudonym[:PSEUDONYM_LENGTH], base=16)
-	san_pseudonym = hex(ui_num)[2:] # make sure string is a hex number, remove 0x prefix
-	san_timestamp = str(timestamp)
+	# make sure pseudonym is correct length and contains a hex number
+	pseudonym = pseudonym[:PSEUDONYM_LENGTH]
+	if not pseudonym.isalnum():
+		return False
+
+	# reject if pseudonym is not in player database
+	if not exists(pseudonym):
+		return False	
+
+	# reject, if the player threw too many errors
+	if pseudonym not in crashCounts:
+		crashCounts[pseudonym] = 0
+	elif MAX_ERROR_LOGS_PER_PLAYER > 0 and crashCounts[pseudonym] > MAX_ERROR_LOGS_PER_PLAYER:
+		return False
+
+	san_timestamp = int(timestamp)
 	san_message = '%20'.join(str(message.strip()).splitlines(keepends=False))
 	san_trace = stackTrace.splitlines(keepends=False)
-
-	# reject if pseudonym is unknown
-	if not exists(san_pseudonym):
-		return False
-	
-	# reject, if the player threw too many errors
-	if ui_num not in crashCounts:
-		crashCounts[ui_num] = 0
-	elif MAX_ERROR_LOGS_PER_PLAYER > 0 and crashCounts[ui_num] > MAX_ERROR_LOGS_PER_PLAYER:
-		return False
 
 	# Update the Prometheus metrics
 	ServerMetrics.incrementCrashMetrics()
 
 	# Increase the logged errors counter and return success
-	crashCounts[int(pseudonym[:PSEUDONYM_LENGTH], base=16)] += 1
+	crashCounts[pseudonym] += 1
 
 	try:
-		crashReportFile.write('\n[' + san_timestamp + '] ui=' + san_pseudonym + ':\n')
+		# Write to crash reporter file
+		crashReportFile.write(f'\n[{san_timestamp}] ui="{pseudonym}":\n')
 		crashReportFile.write(san_message)
 
-		for l in san_trace:
-			crashReportFile.write('\n\t' + l.strip())
+		for line in san_trace:
+			crashReportFile.write('\n\t' + line.strip())
 
 		crashReportFile.write('\n')
 		crashReportFile.flush()
