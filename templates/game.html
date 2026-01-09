@@ -190,8 +190,8 @@
 					alert("The crash reporter crashed, yikes");
 					return; // Panic we have a problem here
 				}
-
-				sendErrorLog(args[0], "console.error()");
+				message = JSON.stringify(args)
+				sendErrorLog(message, "console.error()");
 				consoleErrorLogger.apply(console, args);
 				recursionBreaker = 0;
 			};
