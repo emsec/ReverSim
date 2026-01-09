@@ -130,6 +130,7 @@
 		"gameplay",
 		"gamerule",
 		"gamerules",
+		"gamestate",
 		"getpid",
 		"gnds",
 		"graphviz",

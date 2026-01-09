@@ -146,7 +146,7 @@ class GameConfig():
 
 			# Get Git Hash from Config
 			configStorage['gitHash'] = get_git_revision_hash(shortHash=True)
-			logging.info("Game Version: " + LOGFILE_VERSION + "-" + self.getGitHash())
+			logging.info("Game Version: " + LOGFILE_VERSION + "-" + configStorage['gitHash'])
 
 			# Validate and initialize all groups / add default gamerule
 			for g in configStorage['groups']:
@@ -177,14 +177,14 @@ class GameConfig():
 				gamerules = configStorage['groups'][g]['config']
 				# Validate pause timer
 				if TIMER_NAME_PAUSE in configStorage['groups'][g]['config']:
-					self.validatePauseTimer(g, gamerules)
+					self.validatePauseTimer(configStorage, g, gamerules)
 
 				if TIMER_NAME_GLOBAL_LIMIT in configStorage['groups'][g]['config']:
-					self.validateGlobalTimer(g, gamerules, TIMER_NAME_GLOBAL_LIMIT)
+					self.validateGlobalTimer(configStorage, g, gamerules, TIMER_NAME_GLOBAL_LIMIT)
 				
 				# Validate skill sub-groups gamerules are the same as origin gamerules
 				if PhaseType.Skill in configStorage['groups'][g]:
-					self.validateSkillGroup(g)
+					self.validateSkillGroup(configStorage, g)
 
 				# Make sure the error report level is set
 				if 'crashReportLevel' not in configStorage:
@@ -216,28 +216,31 @@ class GameConfig():
 			raise e
 
 
-	def validatePauseTimer(self, group: str, gameruleName: str):
-		P_CONF = self.__configStorage['groups'][group]['config'][TIMER_NAME_PAUSE]
+	@staticmethod
+	def validatePauseTimer(configStorage: dict[str, Any], group: str, gameruleName: str):
+		P_CONF = configStorage['groups'][group]['config'][TIMER_NAME_PAUSE]
 		assert 'duration' in P_CONF and P_CONF['duration'] >= 0, 'Invalid pause duration in "' + gameruleName + '"'
-		return self.validateGlobalTimer(group, gameruleName, TIMER_NAME_PAUSE)
+		return GameConfig.validateGlobalTimer(configStorage, group, gameruleName, TIMER_NAME_PAUSE)
 
 
-	def validateGlobalTimer(self, group: str, gameruleName: str, timerName: str):
-		P_CONF = self.__configStorage['groups'][group]['config'][timerName]
+	@staticmethod
+	def validateGlobalTimer(configStorage: dict[str, Any], group: str, gameruleName: str, timerName: str):
+		P_CONF = configStorage['groups'][group]['config'][timerName]
 		assert 'after' in P_CONF and P_CONF['after'] >= 0, 'Invalid pause timer start value in "' + gameruleName + '"'
 		
 		assert P_CONF['startEvent'] in [*PHASES, None], 'Invalid start event specified "' + gameruleName + '"'
 
 
-	def validateSkillGroup(self, group: str):
+	@staticmethod
+	def validateSkillGroup(configStorage: dict[str, Any], group: str):
 		"""Make sure that gamerules of the SkillAssessment sub-groups matches the origin gamerules"""
-		originGamerules: Dict[str, Any] = self.__configStorage['groups'][group]['config']
+		originGamerules: Dict[str, Any] = configStorage['groups'][group]['config']
 
 		# Loop over all groups the player can be assigned to after the Skill assessment
-		for subGroup in self.__configStorage['groups'][group][PhaseType.Skill]['groups'].keys():
+		for subGroup in configStorage['groups'][group][PhaseType.Skill]['groups'].keys():
 			# Make sure the sub-group gamerules key&values match the parents gamerules
 			# Debug: [(str(k), originGamerules.get(k) == v) for k, v in subGamerules.items()]
-			subGamerules: Dict[str, Any] = self.__configStorage['groups'][subGroup]['config']
+			subGamerules: Dict[str, Any] = configStorage['groups'][subGroup]['config']
 			if not all((originGamerules.get(k) == v for k, v in subGamerules.items())):
 				logging.warning("The gamerules of the sub-groups specified for SkillAssessment should match the origin gamerules" \
 						+ " (" + group + " -> " + subGroup + ")!"

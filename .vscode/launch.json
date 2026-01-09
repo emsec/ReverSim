@@ -91,6 +91,19 @@
 			"justMyCode": true,
 			"console": "integratedTerminal",
 		},
+		{
+			"name": "Statistics3",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "app.statistics3.statistics3",
+			"args": [
+			],
+			"env": {
+				"REVERSIM_INSTANCE": "${input:instancePath}"
+			},
+			"justMyCode": true,
+			"console": "integratedTerminal",
+		},
 	],
 	"inputs": [
 		{
