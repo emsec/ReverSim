@@ -173,7 +173,12 @@
 			// Catch all exceptions that escape into the browser
 			window.onerror = (event, source, line, column, error) =>
 			{
-				sendErrorLog(error.message, error.stack);
+				// JavaScript allows you to throw literally anything as an exception, 
+				// but only Error objects will have a valid stack trace
+				if(error instanceof Error)
+					sendErrorLog(error.message, error.stack);
+				else
+					sendErrorLog(JSON.stringify(error), [source, line, column].join(':'));
 				return false;
 			};
 

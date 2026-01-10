@@ -41,7 +41,7 @@
 
 	// Syntax highlighting for Jinja templates
 	"files.associations": {
-		"**/templates/*.html": "jinja",
+		"**/templates/*.html": "jinja-html",
 		"**/logFile_*.txt": "log",
 	},
 
