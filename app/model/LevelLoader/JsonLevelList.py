@@ -8,7 +8,7 @@ from app.model.Level import Level
 from app.model.LevelLoader.LevelLoader import LevelLoader
 from app.model.TutorialStatus import TutorialStatus
 from app.utilsGame import LevelType
-from app.config import load_config
+from app.gameConfig import GameConfig
 
 class LeanSlide(NamedTuple):
 	slideType: LevelType
@@ -152,7 +152,7 @@ class JsonLevelList(LevelLoader):
 		"""Load all level lists from `conf/levelList.json` into a `dict`"""
 
 		try:
-			conf = load_config(fileName=fileName, instanceFolder=instanceFolder)
+			conf = GameConfig.load_config(fileName=fileName, instanceFolder=instanceFolder)
 
 			# TODO Run checks to catch any errors directly on launch and not later when
 			# someone tries to load the first level

@@ -64,7 +64,7 @@ class StatisticsGenerator:
 
 		events = session.execute(
 			statement=select(LogEvent).where(LogEvent.pseudonym == statsParticipant.pseudonym)
-		)
+		).scalars()
 
 		log_validator = LogEventValidator()
 

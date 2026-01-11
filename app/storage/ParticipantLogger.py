@@ -6,7 +6,7 @@ from typing import Any, Callable, Union
 
 from markupsafe import Markup
 
-from app.config import ALL_LEVEL_TYPES
+from app.gameConfig import ALL_LEVEL_TYPES, LOGFILE_VERSION, TIME_DRIFT_THRESHOLD
 from app.model.LogEvents import (
 	AltTaskEvent,
 	ChronoEvent,
@@ -430,7 +430,7 @@ class ParticipantLogger:
 		serverTimestamp = self.toUnix(serverTime)
 		currentDelta = serverTimestamp - clientTimestamp
 
-		if self.timeDelta is None or abs(currentDelta - self.timeDelta) > gameConfig.TIME_DRIFT_THRESHOLD: # default: 100ms
+		if self.timeDelta is None or abs(currentDelta - self.timeDelta) > TIME_DRIFT_THRESHOLD: # default: 100ms
 			self.timeDelta = currentDelta
 			
 			return self.logTimeDrift(clientTime=clientTimestamp, serverTime=serverTimestamp)
@@ -471,7 +471,7 @@ class ParticipantLogger:
 
 	@staticmethod
 	def getLogfileHeader(pseudonym: str) -> str:
-		msg = "\n§Event: " + EventType.CreatedLog + "\n§Version: " + gameConfig.LOGFILE_VERSION + "\n§Pseudonym: " + pseudonym + \
+		msg = "\n§Event: " + EventType.CreatedLog + "\n§Version: " + LOGFILE_VERSION + "\n§Pseudonym: " + pseudonym + \
 				"\n§GitHashS: " + gameConfig.getGitHash()
 
 		timeline = LogKeys.TIME_SERVER + ": " + str(now())

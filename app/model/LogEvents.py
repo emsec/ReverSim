@@ -5,7 +5,7 @@ from typing import Annotated, Any, ClassVar, Optional
 from sqlalchemy import JSON, DateTime, Enum, ForeignKey, SmallInteger, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.config import ALL_LEVEL_TYPES, PSEUDONYM_LENGTH
+from app.gameConfig import ALL_LEVEL_TYPES, PSEUDONYM_LENGTH
 from app.model.Level import Level
 from app.storage.database import (
 	LEN_GIT_HASH_S,

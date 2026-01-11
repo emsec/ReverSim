@@ -119,7 +119,7 @@ class LogEventValidator():
 				
 			else:
 				raise LogValidationError(f'Unknown operation "{event.operation}"')
-				
+
 		# Level Operations
 		elif event.timerType in ALL_LEVEL_TYPES:
 			# Check that the Level/Info Slide was created in a Phase which supports them

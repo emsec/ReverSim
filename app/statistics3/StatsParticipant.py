@@ -1,4 +1,4 @@
-from app.config import PHASES_WITH_LEVELS
+from app.gameConfig import PHASES_WITH_LEVELS
 from app.statistics3.StatsPhase import StatsPhase
 from app.statistics3.StatsPhaseLevels import StatsPhaseLevels
 from app.statistics3.statisticsUtils import TIMESTAMP_MS, LogValidationError

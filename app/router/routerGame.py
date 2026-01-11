@@ -1,13 +1,14 @@
 import base64
 import sys
 import traceback
-from typing import Any, Callable, Dict, Mapping
+from typing import Any, Callable, Dict, Mapping, cast
 from flask import Blueprint, make_response, redirect, render_template, request, url_for
 import jinja2
 
 from werkzeug import Response
 from markupsafe import escape
 
+from app.gameConfig import BACK_ONLINE_THRESHOLD_S, LOGFILE_VERSION, GroupNotFound
 from app.model.Participant import Participant
 
 import app.config as gameConfig
@@ -122,7 +123,7 @@ def redirectToPreSurvey():
 					clientTime=None,
 					serverTime=now(),
 					pseudonym=pseudonym,
-					version=gameConfig.LOGFILE_VERSION,
+					version=LOGFILE_VERSION,
 					gitHashS=gameConfig.getGitHash()
 				)
 				event.commit()
@@ -165,7 +166,7 @@ def redirectToPreSurvey():
 		db.session.commit()
 
 	# Something went seriously wrong
-	except gameConfig.GroupNotFound as e:
+	except GroupNotFound as e:
 		print(str(e))
 		return "The group " + group + " is unknown", 400
 
@@ -276,7 +277,7 @@ def action():
 		if requestData is None:
 			raise JsonRPC_PARSE_ERROR(id=None)
 
-		messageList: list[Dict[str, Any]] = requestData if isinstance(requestData, list) else [requestData]
+		messageList: list[Dict[str, Any]] = cast(list[Any], requestData) if isinstance(requestData, list) else [requestData]
 		result: list[Dict[str, Any]] = []
 
 		# Write a log entry when the time delta deviates
@@ -431,7 +432,7 @@ def testConnection():
 		t = participant.lastConnection
 		elapsed = (serverTime - t) / 1000 
 
-		if elapsed >= gameConfig.BACK_ONLINE_THRESHOLD_S:
+		if elapsed >= BACK_ONLINE_THRESHOLD_S:
 			participant.logger.writeToLog(EventType.BackOnline, '§Duration[s]: ' + str(elapsed), timeStamp)
 
 			event = ReconnectEvent(

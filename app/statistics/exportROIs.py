@@ -2,6 +2,7 @@ import os
 from typing import NamedTuple
 
 import app.config as gameConfig
+from app.gameConfig import LEVEL_ENCODING
 from app.model.Level import LEVEL_FILE_PATHS
 from app.model.Phase import PHASES_WITH_LEVELS
 
@@ -129,7 +130,7 @@ def screen_coord_to_level(sx: float, sy: float) -> tuple[float, float]:
 def build_bounding_boxes(level: str, mergeInputs: bool = True, expand: int = 0) -> list[ROI_Entry]:
 	boxes: list[ROI_Entry] = []
 
-	with open(LEVEL_FILE_PATHS['level'] + level, encoding=gameConfig.LEVEL_ENCODING) as file:
+	with open(LEVEL_FILE_PATHS['level'] + level, encoding=LEVEL_ENCODING) as file:
 		connections: dict[int, list[int]] = {}
 		powers: dict[int, ROI_Entry] = {}
 		switches: dict[int, ROI_Entry] = {}

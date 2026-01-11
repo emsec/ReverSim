@@ -1,4 +1,4 @@
-from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
+from app.gameConfig import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
 from app.statistics3.StatsCircuit import StatsCircuit
 from app.statistics3.StatsPhase import StatsPhase
 from app.statistics3.StatsSlide import StatsSlide

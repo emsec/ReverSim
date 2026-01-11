@@ -24,6 +24,9 @@ TIME_DRIFT_THRESHOLD = 200 # ms
 STALE_LOGFILE_TIME = 48 * 60 * 60 # close logfiles after 48h
 MAX_ERROR_LOGS_PER_PLAYER = 25
 
+# The bearer token for the /metrics endpoint
+BEARER_TOKEN_BYTES = 64
+
 # Number of seconds, after which the player is considered disconnected. A "Back Online"
 # message will be printed to the log, if the player connects afterwards. Also used for the
 # Prometheus Online Player Count metric
@@ -124,19 +127,6 @@ class GameConfig():
 		}
 
 
-	def load_config(self, fileName: str, instanceFolder: str|None = None) -> dict[str, Any]:
-		"""Helper to load a JSON configuration relative to the Flask instance folder into a `dict`"""
-		
-		if instanceFolder is None:
-			instanceFolder = self.getInstanceFolder()
-
-		configPath = safe_join(instanceFolder, fileName)
-		with open(configPath, "r", encoding=LEVEL_ENCODING) as f:
-			# Load Config file & fill default gamerules
-			logging.info(f'Loading config "{configPath}"...')
-			return json.load(f)
-
-
 	def loadGameConfig(self, configName: str = "conf/gameConfig.json", instanceFolder: str = 'instance'):
 		"""Read gameConfig.json into the config variable"""
 
@@ -214,6 +204,20 @@ class GameConfig():
 
 		except Exception as e:
 			raise e
+
+
+	@staticmethod
+	def load_config(fileName: str, instanceFolder: str) -> dict[str, Any]:
+		"""
+		Helper to load any JSON configuration relative to the Flask instance folder into 
+		a `dict`
+		"""
+		
+		configPath = safe_join(instanceFolder, fileName)
+		with open(configPath, "r", encoding=LEVEL_ENCODING) as f:
+			# Load Config file & fill default gamerules
+			logging.info(f'Loading config "{configPath}"...')
+			return json.load(f)
 
 
 	@staticmethod

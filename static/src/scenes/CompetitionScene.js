@@ -149,4 +149,14 @@ class CompetitionScene extends GameScene
 			if(this.level.stats.score <= 0)// || this.level.stats.switchClickCtr > MAX_SWITCH_CLICKS_BEFORE_HELP)
 				this.introduceSkipLevelButton();
 	}
+
+	beforeSuspendUI()
+	{
+		super.beforeSuspendUI();
+
+		// When clearing the tweens in super the skip button will become interactive again
+		// because onComplete is called. Therefore the button could be clicked again 
+		// before the slide change
+		this.skipLevelButton.disableInteractive();
+	}
 }

@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 from typing import Optional
 
-from app.config import MAX_ERROR_LOGS_PER_PLAYER, PSEUDONYM_LENGTH
+from app.gameConfig import MAX_ERROR_LOGS_PER_PLAYER, PSEUDONYM_LENGTH
 from app.prometheusMetrics import ServerMetrics
 from app.storage.participantsDict import exists
 from app.utilsGame import now
