@@ -855,8 +855,8 @@ class Participant(db.Model, SanityVersion):
 		"""Called in the PreloadScene to determine if the game is already running or if this is the first session"""
 		self.logger.writeToLog(EventType.StartSession, '', timeStamp)
 
-		state = {
-			'scene': self.getPhaseName() if self.startedGame else 'not started',
+		state: dict[str, str] = {
+			'scene': self.getPhaseName() if self.startedGame else PhaseType.NotStarted,
 			'firstSession': 'yes' if self.packetIndex == 0 else 'no',
 		}
 

@@ -16,7 +16,7 @@ from app.utilsGame import LevelType, PhaseType, get_git_revision_hash, safe_join
 
 # CONFIG Current Log File Version. 
 # NOTE Also change this in the Dockerfile
-LOGFILE_VERSION = "2.1.0" # Major.Milestone.Subversion
+LOGFILE_VERSION = "2.1.3" # Major.Milestone.Subversion
 
 PSEUDONYM_LENGTH = 32
 LEVEL_ENCODING = 'UTF-8' # was Windows-1252

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from app.gameConfig import PHASES_WITH_LEVELS
 from app.statistics3.StatsPhase import StatsPhase
 from app.statistics3.StatsPhaseLevels import StatsPhaseLevels
@@ -6,12 +7,6 @@ from app.utilsGame import PhaseType
 
 
 class StatsParticipant:
-	pseudonym: str
-	is_debug: bool
-	groups: list[str] = []
-
-	phases: list[StatsPhase] = []
-	phaseIdx: int = -1
 
 	@property
 	def activePhase(self) -> StatsPhase:
@@ -22,6 +17,19 @@ class StatsParticipant:
 	def __init__(self, pseudonym: str, is_debug: bool) -> None:
 		self.pseudonym = pseudonym
 		self.is_debug = is_debug
+
+		self.is_debug: bool
+		self.groups: list[str] = []
+
+		self.phases: list[StatsPhase] = []
+		self.phaseIdx: int = -1
+
+		self.quali_fails: int = 0
+
+		self.game_started = False
+		self.reloads: list[str] = []
+
+		self.time_limit: timedelta|None = None
 
 
 	def load_phase(self, type_phase: str, time_loaded: TIMESTAMP_MS):

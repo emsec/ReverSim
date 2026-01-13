@@ -7,9 +7,6 @@ from app.utilsGame import LevelType, PhaseType
 
 
 class StatsPhaseLevels(StatsPhase):
-	
-	levels: list[StatsSlide] = []
-	levelIdx: int = -1
 
 	@property
 	def activeLevel(self) -> StatsSlide:
@@ -20,6 +17,9 @@ class StatsPhaseLevels(StatsPhase):
 	def __init__(self, type_phase: PhaseType, time_load: TIMESTAMP_MS) -> None:
 		super().__init__(type_phase, time_load)
 		assert type_phase in PHASES_WITH_LEVELS
+
+		self.levels: list[StatsSlide] = []
+		self.levelIdx: int = -1
 
 	
 	def load_level(self, type_level: str, log_name: str, time_load: TIMESTAMP_MS):
@@ -35,4 +35,3 @@ class StatsPhaseLevels(StatsPhase):
 
 		self.levels.append(level)
 		self.levelIdx = len(self.levels) - 1
-

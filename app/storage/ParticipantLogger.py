@@ -83,7 +83,8 @@ class ParticipantLogger:
 
 	def chronoEvent(self, event: ChronoEvent) -> str:
 		""""""
-		if event.phase_id == PhaseType.Preload:
+		assert event.phase is not None
+		if event.phase.activePhase == PhaseType.Preload:
 			return self.logPreload(event)
 
 		if event.timerType in ALL_LEVEL_TYPES.keys():

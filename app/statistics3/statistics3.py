@@ -6,6 +6,7 @@ from typing import Iterable
 from sqlalchemy import Engine, create_engine, func, select
 from sqlalchemy.orm import Session
 
+import app.config as gameConfigLegacy
 from app.gameConfig import GameConfig
 from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.model.LevelLoader.LevelLoader import LevelLoader
@@ -52,10 +53,22 @@ class StatisticsGenerator:
 					GroupAssignmentEvent.isDebug == False  # noqa: E712
 				)
 
-			pseudonyms: Iterable[str] = session.scalars(stmt)
+			expected_pseudonyms: list[str] = list(session.scalars(stmt))
+			valid_pseudonyms: list[str] = []
 
-			for pseudonym in pseudonyms:
-				yield self.read_participant(session, pseudonym)
+			for pseudonym in expected_pseudonyms:
+				try:
+					participant = self.read_participant(session, pseudonym)
+					valid_pseudonyms.append(pseudonym)
+					yield participant
+				except LogValidationError as e:
+					lineInfo = (f'#{e.event.id}' if e.event is not None else '')
+					logging.error(f'{getShortPseudo(pseudonym)}{lineInfo} is invalid: "{e}"')
+				except AssertionError as e:
+					logging.error(f'Something went wrong while parsing {pseudonym}: "{e}"')
+
+			logging.info(' ------------ ')
+			logging.info(f'{len(valid_pseudonyms)} of {len(expected_pseudonyms)} player logs passed validation')
 
 	
 	def read_participant(self, session: Session, pseudonym: str) -> StatsParticipant:
@@ -123,13 +136,15 @@ def main():
 		configName=CONFIG_NAME,
 		instanceFolder=INSTANCE_FOLDER
 	)
+	gameConfigLegacy.setGameConfig(gameConfig)
+	
 
 	# Load the Level Loader
 	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=INSTANCE_FOLDER)
 
 	# Open the Database
 	database_path = os.path.join(INSTANCE_FOLDER, DATABASE_PATH)
-	engine = (create_engine("sqlite:///" + database_path, echo=True)
+	engine = (create_engine("sqlite:///" + database_path, echo=False)
 		.execution_options(sqlite_readonly = True))
 
 	statsGenerator = StatisticsGenerator(INSTANCE_FOLDER, gameConfig, JsonLevelList, engine)

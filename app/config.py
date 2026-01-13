@@ -20,6 +20,11 @@ def loadGameConfig(configName: str = "conf/gameConfig.json", instanceFolder: str
 	__gameConfig = GameConfig(instanceFolder=instanceFolder, configName=configName)
 
 
+def setGameConfig(config: GameConfig):
+	global __gameConfig
+	__gameConfig = config
+
+
 @functools.wraps(GameConfig.groups)
 def groups() -> Dict[str, Any]:
 	assert __gameConfig is not None
