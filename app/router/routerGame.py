@@ -8,7 +8,7 @@ import jinja2
 from werkzeug import Response
 from markupsafe import escape
 
-from app.gameConfig import BACK_ONLINE_THRESHOLD_S, LOGFILE_VERSION, GroupNotFound
+from app.gameConfig import BACK_ONLINE_THRESHOLD_S, BASE64_PREAMBLE, LOGFILE_VERSION, GroupNotFound
 from app.model.Participant import Participant
 
 import app.config as gameConfig
@@ -228,14 +228,17 @@ def saveCanvasImage():
 	The Request params must contain the pseudonym of the player. The request body shall contain the Base64 encoded PNG snapshot of the players canvas. 
 	The pictures are stored under "statistics/<ui>/<phase>/<picNmbr>.png" for most phases and "statistics/<ui>/<phase>/<levelName>/<picNmbr>.png" for the quali and competition phase
 	"""
-	imgstring = escape(request.form['canvasImage'])
-	imgstring = imgstring.replace('data:image/png;base64,', '')
-	imgdata = base64.b64decode(imgstring)
 
 	pseudonym = sanitizeString(request.form['pseudonym'])
-
 	if not participantsDict.exists(pseudonym):
 		return 'Invalid pseudonym', 400
+
+	imgstring = escape(request.form['canvasImage'])
+	if not imgstring.startswith(BASE64_PREAMBLE):
+		return 'Invalid Image', 400
+	
+	imgstring = imgstring.removeprefix(BASE64_PREAMBLE)
+	imgdata = base64.b64decode(imgstring)
 
 	participant = participantsDict.get(pseudonym)
 	phase = participant.getPhase()

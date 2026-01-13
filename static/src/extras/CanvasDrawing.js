@@ -87,19 +87,19 @@ class CanvasDrawing
 			if(this.justPaintedSomething == true)
 			{
 				//alert('dude, you painted something');
-				LogData.sendCanvasPNG();
+				LogData.sendCanvasPNG(this.scene);
 				JsonRPC.send("draw", {"tool": "pen", "info": this.drawLine.fillColor})
 				this.justPaintedSomething = false;
 			} else if(this.erasedSomething == true)
 			{
 				//alert('you erased something');
-				LogData.sendCanvasPNG();
+				LogData.sendCanvasPNG(this.scene);
 				JsonRPC.send("draw", {"tool": "eraser"})
 				this.erasedSomething = false;
 			} else if(this.deletedEverything == true)
 			{
 				//alert('you deleted everything')
-				LogData.sendCanvasPNG();
+				LogData.sendCanvasPNG(this.scene);
 				JsonRPC.send("draw", {"tool": "purge"})
 				this.deletedEverything = false;
 			}

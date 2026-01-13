@@ -29,23 +29,31 @@ class LogData
 
 	/**
 	 * Take a screenshot of the current canvas (this will not include any HTML overlays) and send it to the server.
+	 * @param {Phaser.Scene} scene 
 	 */
-	static sendCanvasPNG()
+	static sendCanvasPNG(scene)
 	{
+		const IMAGE_FORMAT = 'image/png';
+		const IMAGE_QUALITY = 0.8; // Only relevant for jpeg
+
 		if(!gamerules.enableLogging)
 			return "Logging is disabled"
 
 		// get canvas as image
-		var htmlCollection = document.getElementsByTagName('canvas');
-		var canvas = htmlCollection[0];
-		var imgData = canvas.toDataURL("image/png", 1.0);
+		scene.renderer.snapshot((snapshot) => {
+			if(!(snapshot instanceof HTMLImageElement))
+			{
+				console.error('snapshot was not of type HTMLImageElement');
+				return;
+			}
+			
+			let data = {
+				canvasImage: snapshot.src,
+				'pseudonym': pseudonym,
+				'timeStamp': Rq.now()
+			};
 
-		let data = {
-			canvasImage: imgData,
-			'pseudonym': pseudonym,
-			'timeStamp': Rq.now()
-		};
-
-		Rq.post('/canvasImage', () => {}, data, "application/x-www-form-urlencoded; charset=UTF-8");
+			Rq.post('/canvasImage', () => {}, data, "application/x-www-form-urlencoded; charset=UTF-8");
+		}, IMAGE_FORMAT, IMAGE_QUALITY);
 	}
 }

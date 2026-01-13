@@ -43,6 +43,10 @@ DEFAULT_FOOTER = {
 	"researchInfo": REVERSIM_STATIC_URL + "/researchInfo/researchInfo.html"
 }
 
+# Used by the screenshot tool to decide which format to decode
+BASE64_PREAMBLE = 'data:image/png;base64,'
+SCREENSHOT_EXTENSION = '.png'
+
 class GroupNotFound(Exception):
 	"""Raised when a group is requested, which is not in the config"""
 	pass
