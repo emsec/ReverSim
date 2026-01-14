@@ -9,7 +9,7 @@ from flask.ctx import AppContext
 from prometheus_flask_exporter import PrometheusMetrics, Gauge  # type: ignore
 from prometheus_flask_exporter.multiprocess import UWsgiPrometheusMetrics  # type: ignore
 
-import app.config as gameConfig
+from app.gameConfig import METRIC_UPDATE_INTERVAL, LOGFILE_VERSION
 import app.storage.participantsDict as participantsDict
 
 
@@ -54,7 +54,7 @@ class ServerMetrics:
 		"""Init Prometheus"""
 		cls.metrics = cls.__prometheusFactory(auth_provider)
 		cls.metrics.init_app(app) # type: ignore
-		cls.metrics.info('app_info', 'Application info', version=gameConfig.LOGFILE_VERSION) # type: ignore
+		cls.metrics.info('app_info', 'Application info', version=LOGFILE_VERSION) # type: ignore
 		
 		cls.met_playersConnected: Gauge|None = cls.metrics.info( # type: ignore
 			name='reversim_player_count',
@@ -94,7 +94,7 @@ class ServerMetrics:
 				
 				cls.met_playersConnected.set(participantsDict.getConnectedPlayers())
 
-			time.sleep(gameConfig.METRIC_UPDATE_INTERVAL) # [s]
+			time.sleep(METRIC_UPDATE_INTERVAL) # [s]
 
 
 	@classmethod

@@ -1,5 +1,5 @@
 import random
-from app.config import ALL_LEVEL_TYPES, LEVEL_ENCODING
+from app.gameConfig import ALL_LEVEL_TYPES, LEVEL_ENCODING
 from app.model.Level import Level
 from app.model.LevelLoader.LevelLoader import LevelLoader
 from app.utilsGame import LevelType, getFileLines

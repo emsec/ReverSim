@@ -477,6 +477,8 @@ def main():
 	global location_logs, location_pics, location_gameConfig, skip_pic_inspection
 	global timesync_threshold, header, groupFilter, attributes, vipLogs, timeline_events
 
+	INSTANCE_FOLDER = os.path.abspath(os.environ.get("REVERSIM_INSTANCE", "./instance"))
+
 	parser = argparse.ArgumentParser(description="A script to aggregate the logfiles from the ReverSim game into a csv file.")
 	parser.add_argument("csvGenerator", help="The script to be used to generate the csv file. \"app/statistics/csvGenerators/\"")
 	parser.add_argument("-l", "--log", metavar='LEVEL', help="Specify the log level, must be one of DEBUG, INFO, WARNING, ERROR or CRITICAL", default="INFO")
@@ -494,6 +496,7 @@ def main():
 			"Keep in mind that TimeSync events are only fired, if the client and server time deviate at least by "\
 			"config.py@TIME_DRIFT_THRESHOLD (0.2)", default=40 #s
 	)
+	#parser.add_argument('-i', '--instance-path', help='', default=INSTANCE_FOLDER)
 	
 	args = parser.parse_args()
 	try:
@@ -530,8 +533,6 @@ def main():
 	except (ModuleNotFoundError, AttributeError) as e:
 		logging.critical(str(e))
 		exit(-42)
-
-	INSTANCE_FOLDER = os.path.abspath(os.environ.get("REVERSIM_INSTANCE", "./instance"))
 
 	# Load the game config
 	gameConfig.loadGameConfig(

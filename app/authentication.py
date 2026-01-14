@@ -4,7 +4,7 @@ import secrets
 
 from flask_httpauth import HTTPTokenAuth  # type: ignore
 
-from app.config import BEARER_TOKEN_BYTES
+from app.gameConfig import BEARER_TOKEN_BYTES
 from app.model.ApiKey import ApiKey
 from app.storage.database import db
 from app.utilsGame import safe_join

@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from app.config import PHASES_WITH_LEVELS
+from app.gameConfig import PHASES_WITH_LEVELS
 from app.model.Level import ALL_LEVEL_TYPES
 from app.model.LevelLoader.JsonLevelList import JsonLevelList
 

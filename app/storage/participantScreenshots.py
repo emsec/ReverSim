@@ -2,6 +2,7 @@ from math import isnan
 import os
 from typing import Optional
 
+from app.gameConfig import SCREENSHOT_EXTENSION
 from app.utilsGame import safe_join
 
 class ScreenshotWriter:
@@ -40,7 +41,7 @@ class ScreenshotWriter:
 		imagePath: Optional[str] = None
 
 		for i in range(0, 99):
-			imagePath = safe_join(screenshotFolder, str(picNmbr + i) + '.png')
+			imagePath = safe_join(screenshotFolder, str(picNmbr + i) + SCREENSHOT_EXTENSION)
 
 			# If filename already exists, continue to increment
 			if os.path.exists(imagePath):

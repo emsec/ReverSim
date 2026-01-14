@@ -3,6 +3,7 @@ import re
 from flask import Blueprint, redirect, render_template, url_for
 
 import app.config as gameConfig
+from app.gameConfig import REVERSIM_STATIC_URL
 from app.utilsGame import PhaseType
 
 routerStatic = Blueprint('staticRoutes', __name__)
@@ -16,7 +17,7 @@ def initAssetRouter():
 	"""Called by gameServer.py after the config was loaded, since the `assetRoutes` blueprint depends on it"""
 	global router_asset_path, routerAssets
 	router_asset_path = gameConfig.getAssetPath()
-	routerAssets = Blueprint('assetRoutes', __name__, url_prefix=gameConfig.REVERSIM_STATIC_URL, static_url_path='/', static_folder=router_asset_path)
+	routerAssets = Blueprint('assetRoutes', __name__, url_prefix=REVERSIM_STATIC_URL, static_url_path='/', static_folder=router_asset_path)
 
 
 # Fix Markdown links in docs

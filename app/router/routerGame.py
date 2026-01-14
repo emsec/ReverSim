@@ -1,13 +1,14 @@
 import base64
 import sys
 import traceback
-from typing import Any, Callable, Dict, Mapping
+from typing import Any, Callable, Dict, Mapping, cast
 from flask import Blueprint, make_response, redirect, render_template, request, url_for
 import jinja2
 
 from werkzeug import Response
 from markupsafe import escape
 
+from app.gameConfig import BACK_ONLINE_THRESHOLD_S, BASE64_PREAMBLE, LOGFILE_VERSION, GroupNotFound
 from app.model.Participant import Participant
 
 import app.config as gameConfig
@@ -122,7 +123,7 @@ def redirectToPreSurvey():
 					clientTime=None,
 					serverTime=now(),
 					pseudonym=pseudonym,
-					version=gameConfig.LOGFILE_VERSION,
+					version=LOGFILE_VERSION,
 					gitHashS=gameConfig.getGitHash()
 				)
 				event.commit()
@@ -165,7 +166,7 @@ def redirectToPreSurvey():
 		db.session.commit()
 
 	# Something went seriously wrong
-	except gameConfig.GroupNotFound as e:
+	except GroupNotFound as e:
 		print(str(e))
 		return "The group " + group + " is unknown", 400
 
@@ -227,14 +228,17 @@ def saveCanvasImage():
 	The Request params must contain the pseudonym of the player. The request body shall contain the Base64 encoded PNG snapshot of the players canvas. 
 	The pictures are stored under "statistics/<ui>/<phase>/<picNmbr>.png" for most phases and "statistics/<ui>/<phase>/<levelName>/<picNmbr>.png" for the quali and competition phase
 	"""
-	imgstring = escape(request.form['canvasImage'])
-	imgstring = imgstring.replace('data:image/png;base64,', '')
-	imgdata = base64.b64decode(imgstring)
 
 	pseudonym = sanitizeString(request.form['pseudonym'])
-
 	if not participantsDict.exists(pseudonym):
 		return 'Invalid pseudonym', 400
+
+	imgstring = escape(request.form['canvasImage'])
+	if not imgstring.startswith(BASE64_PREAMBLE):
+		return 'Invalid Image', 400
+	
+	imgstring = imgstring.removeprefix(BASE64_PREAMBLE)
+	imgdata = base64.b64decode(imgstring)
 
 	participant = participantsDict.get(pseudonym)
 	phase = participant.getPhase()
@@ -276,7 +280,7 @@ def action():
 		if requestData is None:
 			raise JsonRPC_PARSE_ERROR(id=None)
 
-		messageList: list[Dict[str, Any]] = requestData if isinstance(requestData, list) else [requestData]
+		messageList: list[Dict[str, Any]] = cast(list[Any], requestData) if isinstance(requestData, list) else [requestData]
 		result: list[Dict[str, Any]] = []
 
 		# Write a log entry when the time delta deviates
@@ -431,7 +435,7 @@ def testConnection():
 		t = participant.lastConnection
 		elapsed = (serverTime - t) / 1000 
 
-		if elapsed >= gameConfig.BACK_ONLINE_THRESHOLD_S:
+		if elapsed >= BACK_ONLINE_THRESHOLD_S:
 			participant.logger.writeToLog(EventType.BackOnline, '§Duration[s]: ' + str(elapsed), timeStamp)
 
 			event = ReconnectEvent(
@@ -458,7 +462,7 @@ def crashReport():
 	"""Called by the server when an exception escapes to the browser or `console.error()` is called"""
 	serverTime = now()
 	
-	writeCrashReport(
+	successful = writeCrashReport(
 		pseudonym=request.form.get('ui', 'Unknown'),
 		group=request.form.get('group', 'Unknown'),
 		timestamp=serverTime,
@@ -466,7 +470,10 @@ def crashReport():
 		stackTrace=request.form.get('trace', '')
 	)
 
-	return 'error information send', 200
+	if successful:
+		return 'error information send', 200
+	else:
+		return 'error information rejected', 400
 
 
 def getDefaultUrl(request: Any):

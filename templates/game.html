@@ -141,10 +141,9 @@
 			/**
 			* Send a crash report to the server containing the pseudonym, message, source file and stack trace.
 			* @param {string} message 
-			* @param {string} origin 
 			* @param {string} trace 
 			*/
-			function sendErrorLog(message, origin, trace)
+			function sendErrorLog(message, trace)
 			{
 				try
 				{
@@ -162,7 +161,6 @@
 						"ui=" + encodeURIComponent(pseudonym) +
 						"&group=" + encodeURIComponent(group) +
 						"&message=" + encodeURIComponent(message) +
-						"&origin=" + encodeURIComponent(origin) +
 						"&trace=" + encodeURIComponent(trace)
 					);
 				}
@@ -175,7 +173,12 @@
 			// Catch all exceptions that escape into the browser
 			window.onerror = (event, source, line, column, error) =>
 			{
-				sendErrorLog(error.message, source + ':' + line + (column > 2000 ? ':' + column : ''), error.stack);
+				// JavaScript allows you to throw literally anything as an exception, 
+				// but only Error objects will have a valid stack trace
+				if(error instanceof Error)
+					sendErrorLog(error.message, error.stack);
+				else
+					sendErrorLog(JSON.stringify(error), [source, line, column].join(':'));
 				return false;
 			};
 
@@ -192,8 +195,8 @@
 					alert("The crash reporter crashed, yikes");
 					return; // Panic we have a problem here
 				}
-
-				sendErrorLog(args[0], "console.error", "");
+				message = JSON.stringify(args)
+				sendErrorLog(message, "console.error()");
 				consoleErrorLogger.apply(console, args);
 				recursionBreaker = 0;
 			};

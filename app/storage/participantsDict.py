@@ -5,7 +5,7 @@ from datetime import datetime
 
 from sqlalchemy.exc import NoResultFound
 
-import app.config as gameConfig
+from app.gameConfig import BACK_ONLINE_THRESHOLD_S, PSEUDONYM_LENGTH
 from app.model.GroupStats import GroupStats
 from app.model.Participant import Participant
 from app.storage.database import db
@@ -71,7 +71,7 @@ def increaseGroupCounter(participant: Participant, timeStamp: str) -> None:
 
 def generatePseudonym(srcIP: str) -> str:
 	inputHash = datetime.now().strftime("%H:%M:%S") + srcIP + secrets.token_hex(128)
-	return hashlib.blake2b(inputHash.encode(), digest_size=int(gameConfig.PSEUDONYM_LENGTH/2)).hexdigest()
+	return hashlib.blake2b(inputHash.encode(), digest_size=int(PSEUDONYM_LENGTH/2)).hexdigest()
 
 
 def getConnectedPlayers() -> int:
@@ -81,7 +81,7 @@ def getConnectedPlayers() -> int:
 	`BACK_ONLINE_THRESHOLD_S` seconds (5 seconds).
 	"""
 	# All lastConnection timestamps greater than this are considered connected
-	lastConsideredOnline = now() - gameConfig.BACK_ONLINE_THRESHOLD_S*1000 # [ms]
+	lastConsideredOnline = now() - BACK_ONLINE_THRESHOLD_S*1000 # [ms]
 
 	playersConnected = (db.session.query(Participant)
 		.filter(Participant.lastConnection > lastConsideredOnline)

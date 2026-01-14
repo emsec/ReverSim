@@ -1,11 +1,11 @@
-from datetime import datetime
-from enum import StrEnum
 import os
 import subprocess
+from datetime import datetime
+from enum import StrEnum
 from typing import Any, List, Optional
-from markupsafe import escape
 
 import werkzeug.security as ws
+from markupsafe import escape
 
 
 def now() -> int:
@@ -120,6 +120,7 @@ def getShortPseudo(pseudonym: str, length: int = 16) -> str:
 		return pseudonym[:length] + "..."
 	
 	return pseudonym
+
 
 X_TRUE: Any = [1, True,  '1', 'True',  'true', 'yes']
 X_FALSE: Any = [0, False, '0', 'False', 'false', 'no']

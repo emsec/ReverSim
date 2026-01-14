@@ -4,7 +4,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
 
 import app.config as gameConfig
-from app.config import (
+from app.gameConfig import (
 	ALL_LEVEL_TYPES,
 	LEVEL_BASE_FOLDER,
 	LEVEL_FILE_PATHS,

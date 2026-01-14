@@ -9,7 +9,7 @@ from sqlalchemy.orm import (
 	relationship,
 )
 
-from app.config import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
+from app.gameConfig import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
 from app.model.Level import Level
 from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.model.LogEvents import ChronoEvent

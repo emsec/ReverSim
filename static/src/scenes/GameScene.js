@@ -558,7 +558,7 @@ class GameScene extends BaseScene
 		JsonRPC.send("switch", levelState);
 
 		// send screenshot
-		LogData.sendCanvasPNG();
+		LogData.sendCanvasPNG(this);
 
 		// Update the scoreboard
 		this.updateScore('switchClick');
@@ -926,7 +926,6 @@ ${textYourScore} ${this.level.stats.score.toString()} / 100
 	cleanUp()
 	{
 		try {this.timerReminderText.destroy();} catch {}
-		this.stopCountdown();
 		super.cleanUp();
 	}
 }

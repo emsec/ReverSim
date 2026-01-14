@@ -13,8 +13,9 @@ from sqlalchemy.orm import (
 )
 
 import app.config as gameConfig
+from app.gameConfig import ALL_LEVEL_TYPES, DEFAULT_PAUSE_SLIDE, PSEUDONYM_LENGTH, TIME_DRIFT_THRESHOLD, TIMER_NAME_GLOBAL_LIMIT, TIMER_NAME_PAUSE
 from app.model.GroupStats import GroupStats
-from app.model.Level import ALL_LEVEL_TYPES, Level
+from app.model.Level import Level
 from app.model.LogEvents import (
 	AltTaskEvent,
 	ChronoEvent,
@@ -56,7 +57,7 @@ class Participant(db.Model, SanityVersion):
 	Planning to follow the Model View Controller approach
 	"""
 
-	pseudonym: Mapped[str] = mapped_column(String(gameConfig.PSEUDONYM_LENGTH), primary_key=True)
+	pseudonym: Mapped[str] = mapped_column(String(PSEUDONYM_LENGTH), primary_key=True)
 	group: Mapped[str] = mapped_column(String(LEN_GROUP))
 	isDebug: Mapped[bool] = mapped_column(default=False)
 	phaseIdx: Mapped[int] = mapped_column(default=0)
@@ -231,7 +232,7 @@ class Participant(db.Model, SanityVersion):
 		return LevelType(level.type), level.getName()
 	
 
-	def getLink(self, linkName: str, params: dict[str, str], lang: str = gameConfig.getDefaultLang()):
+	def getLink(self, linkName: str, params: dict[str, str], lang: str|None = None):
 		"""Get the redirect link to the preSurvey / postSurvey, or None if not specified
 		
 		example config entry: https://survey.academiccloud.de/index.php/123456?ui={ui}&lang={lang}&group={group}
@@ -239,6 +240,10 @@ class Participant(db.Model, SanityVersion):
 		{ui}, {group}, {lang} and {timeStamp} will be replaced with the pseudonym, group and chosen language
 		"""
 		assert linkName in ['urlPreSurvey', 'urlPostSurvey']
+
+		# Get the default language if it is not specified
+		if lang is None:
+			lang = gameConfig.getDefaultLang()
 		
 		# If no link is configured, return None. 
 		link = self.getGamerules().get(linkName, None)
@@ -305,18 +310,18 @@ class Participant(db.Model, SanityVersion):
 	def startGame(self, timeStamp: int):
 		self.logger.writeToLog(EventType.PhaseRequested, '§Scene: PreloadScene', timeStamp)
 
-		globalLimit = self.getGlobalTimerDuration(gameConfig.TIMER_NAME_GLOBAL_LIMIT)
-		globalLimit = globalLimit if globalLimit > 0 else None
+		globalLimit = self.getGlobalTimerDuration(TIMER_NAME_GLOBAL_LIMIT) # ms
+		globalLimit = globalLimit/1000 if globalLimit > 0 else None
 
 		event = ChronoEvent(
 			clientTime=timeStamp,
 			serverTime=now(),
 			pseudonym=self.pseudonym,
-			phase='PreloadScene',
+			phase=PhaseType.Preload,
 			level=None,
 			operation='start',
 			timerType='phase',
-			context='PreloadScene',
+			context=PhaseType.Preload,
 			limit=globalLimit
 		)
 		event.commit()
@@ -349,13 +354,13 @@ class Participant(db.Model, SanityVersion):
 			status['timerPhaseStart'] = phase.getStartTime()
 			status['timerPhaseDuration'] = phaseDuration
 
-		if self.getGlobalTimerDuration(gameConfig.TIMER_NAME_GLOBAL_LIMIT) > 0:
-			status['timerGlobalStart'] = self.getGlobalTimerStart(gameConfig.TIMER_NAME_GLOBAL_LIMIT)
-			status['timerGlobalDuration'] = self.getGlobalTimerDuration(gameConfig.TIMER_NAME_GLOBAL_LIMIT)
+		if self.getGlobalTimerDuration(TIMER_NAME_GLOBAL_LIMIT) > 0:
+			status['timerGlobalStart'] = self.getGlobalTimerStart(TIMER_NAME_GLOBAL_LIMIT)
+			status['timerGlobalDuration'] = self.getGlobalTimerDuration(TIMER_NAME_GLOBAL_LIMIT)
 
 		# If the global time limit has run out, show FinalScene
-		if self.getGlobalTimerEnd(gameConfig.TIMER_NAME_GLOBAL_LIMIT) > 0 and \
-				int(timeStamp) >= self.getGlobalTimerEnd(gameConfig.TIMER_NAME_GLOBAL_LIMIT):
+		if self.getGlobalTimerEnd(TIMER_NAME_GLOBAL_LIMIT) > 0 and \
+				int(timeStamp) >= self.getGlobalTimerEnd(TIMER_NAME_GLOBAL_LIMIT):
 			status["phase"] = PhaseType.FinalScene
 
 		# Return unlocked intro slides
@@ -407,7 +412,7 @@ class Participant(db.Model, SanityVersion):
 	def next(self, timeStamp: int):
 		phase = self.getPhase()
 		levelsRemain = phase.getRemainingLevels() > 1 and not self.failedQuali and not phase.timerHasEnded()
-		pauseEnabled = self.getGlobalTimerEnd(gameConfig.TIMER_NAME_PAUSE) > 0
+		pauseEnabled = self.getGlobalTimerEnd(TIMER_NAME_PAUSE) > 0
 
 		self.logger.writeToLog(EventType.Click, '§Object: Continue Button', timeStamp)
 
@@ -423,9 +428,9 @@ class Participant(db.Model, SanityVersion):
 		# Insert Pause Slide if enabled, the time has come and at least one level remains
 		if phase.hasLevels() and levelsRemain:
 			if pauseEnabled and not self.pauseShown:
-				if self.getGlobalTimerEnd(gameConfig.TIMER_NAME_PAUSE) < int(timeStamp):
+				if self.getGlobalTimerEnd(TIMER_NAME_PAUSE) < int(timeStamp):
 					assert 'pause' in self.getGamerules(), "Missing key 'pause' in gamerules"
-					path_pause_slide = 'pause/' + self.getGamerules()['pause'].get('fileName', gameConfig.DEFAULT_PAUSE_SLIDE)
+					path_pause_slide = 'pause/' + self.getGamerules()['pause'].get('fileName', DEFAULT_PAUSE_SLIDE)
 
 					# NOTE We insert at the position of the current level, therefore the pause slide has
 					# the same position as the current level. But the primary key will be higher and therefore
@@ -850,8 +855,8 @@ class Participant(db.Model, SanityVersion):
 		"""Called in the PreloadScene to determine if the game is already running or if this is the first session"""
 		self.logger.writeToLog(EventType.StartSession, '', timeStamp)
 
-		state = {
-			'scene': self.getPhaseName() if self.startedGame else 'not started',
+		state: dict[str, str] = {
+			'scene': self.getPhaseName() if self.startedGame else PhaseType.NotStarted,
 			'firstSession': 'yes' if self.packetIndex == 0 else 'no',
 		}
 
@@ -899,7 +904,7 @@ class Participant(db.Model, SanityVersion):
 		"""
 		currentDelta = serverTime - clientTime
 
-		if self.timeDelta is None or abs(currentDelta - self.timeDelta) > gameConfig.TIME_DRIFT_THRESHOLD: # default: 100ms
+		if self.timeDelta is None or abs(currentDelta - self.timeDelta) > TIME_DRIFT_THRESHOLD: # default: 100ms
 			self.timeDelta = currentDelta
 			self.logger.writeToLog(EventType.TimeSync, '§Server: ' + str(serverTime), clientTime)
 
