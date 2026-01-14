@@ -357,7 +357,7 @@ class BaseScene extends Phaser.Scene
 		}
 
 		// Que the countdown message, it will be send later by show()
-		JsonRPC.que("chrono", ["countdown", this.phase, "start", Rq.now()]);
+		JsonRPC.que("chrono", ["countdown", this.phase, "start", Rq.now(), this.timerDuration/1000]);
 		console.log("Time: " + this.timerDuration/1000 + " seconds remaining until " + advTimerName + ".");
 	}
 
@@ -471,6 +471,10 @@ class BaseScene extends Phaser.Scene
 	 */
 	cleanUp() 
 	{
+		// First make sure no countdown fires during cleanup
+		this.stopCountdown();
+
+		// Remove all Click Listeners
 		for(const e of this.eventList)
 			this.input.removeListener(e);
 

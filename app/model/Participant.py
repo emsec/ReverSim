@@ -310,18 +310,18 @@ class Participant(db.Model, SanityVersion):
 	def startGame(self, timeStamp: int):
 		self.logger.writeToLog(EventType.PhaseRequested, '§Scene: PreloadScene', timeStamp)
 
-		globalLimit = self.getGlobalTimerDuration(TIMER_NAME_GLOBAL_LIMIT)
-		globalLimit = globalLimit if globalLimit > 0 else None
+		globalLimit = self.getGlobalTimerDuration(TIMER_NAME_GLOBAL_LIMIT) # ms
+		globalLimit = globalLimit/1000 if globalLimit > 0 else None
 
 		event = ChronoEvent(
 			clientTime=timeStamp,
 			serverTime=now(),
 			pseudonym=self.pseudonym,
-			phase='PreloadScene',
+			phase=PhaseType.Preload,
 			level=None,
 			operation='start',
 			timerType='phase',
-			context='PreloadScene',
+			context=PhaseType.Preload,
 			limit=globalLimit
 		)
 		event.commit()

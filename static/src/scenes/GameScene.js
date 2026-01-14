@@ -926,7 +926,6 @@ ${textYourScore} ${this.level.stats.score.toString()} / 100
 	cleanUp()
 	{
 		try {this.timerReminderText.destroy();} catch {}
-		this.stopCountdown();
 		super.cleanUp();
 	}
 }
