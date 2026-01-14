@@ -12,6 +12,7 @@ from app.model.LevelLoader.JsonLevelList import JsonLevelList
 from app.model.LevelLoader.LevelLoader import LevelLoader
 from app.model.LogEvents import GroupAssignmentEvent, LogEvent
 from app.model.Participant import Participant
+from app.statistics3.GameStateValidator import GameStateValidator
 from app.statistics3.LogEventValidator import LogEventValidator
 from app.statistics3.statisticsUtils import LogValidationError
 from app.statistics3.StatsParticipant import StatsParticipant
@@ -80,6 +81,7 @@ class StatisticsGenerator:
 		).scalars()
 
 		log_validator = LogEventValidator()
+		state_validator = GameStateValidator()
 
 		logging.info(f'Validating {getShortPseudo(pseudonym)}')
 		for event in events:
@@ -90,6 +92,8 @@ class StatisticsGenerator:
 			except LogValidationError as e:
 				e.event = event
 				raise e
+
+		state_validator.validate(statsParticipant, session)
 
 		# If all went well, we have a populated player statistic
 		return statsParticipant

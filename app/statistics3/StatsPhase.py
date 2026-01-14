@@ -1,7 +1,13 @@
 
-from datetime import timedelta
 import logging
-from app.statistics3.statisticsUtils import TIME_TOLERANCE, TIMESTAMP_MS, CurrentState, LogValidationError
+from datetime import timedelta
+
+from app.statistics3.statisticsUtils import (
+	TIME_TOLERANCE,
+	TIMESTAMP_MS,
+	CurrentState,
+	LogValidationError,
+)
 from app.utilsGame import PhaseType
 
 
@@ -11,8 +17,9 @@ class StatsPhase:
 		self.phaseType = type_phase
 
 		self.time_load: TIMESTAMP_MS = time_load
-		self.time_start: TIMESTAMP_MS|None
-		self.time_finish: TIMESTAMP_MS|None
+		self.time_start: TIMESTAMP_MS|None = None
+		self.time_start_levels: TIMESTAMP_MS|None = None
+		self.time_finish: TIMESTAMP_MS|None = None
 
 		self.time_limit: timedelta|None = None
 
@@ -55,3 +62,21 @@ class StatsPhase:
 			if recorded_duration > allowed_duration:
 				logging.warning(f'Overtime {recorded_duration}, allowed was {allowed_duration} in {self.phaseType}')
 				#raise LogValidationError(f'Overtime {recorded_duration}, allowed was {allowed_duration}')
+
+
+	def start_phase_time_limit(self, time_start_levels: TIMESTAMP_MS):
+		self.time_start_levels = time_start_levels
+
+		if self.status not in [CurrentState.LOADED, CurrentState.STARTED]:
+			raise LogValidationError(f'Expected phase loaded, got {self.status}')
+
+		if self.time_start is not None and self.time_start > time_start_levels:
+			raise LogValidationError('The time_start_levels is invalid')
+
+
+	def stop_phase_time_limit(self, time_stop_levels: TIMESTAMP_MS):
+		if self.status != CurrentState.STARTED:
+			raise LogValidationError(f'Expected phase started, got {self.status}')
+		
+		self.finish(time_stop_levels)
+		self.status = CurrentState.TIMEOUT

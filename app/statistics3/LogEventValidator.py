@@ -191,6 +191,17 @@ class LogEventValidator():
 
 			else:
 				raise LogValidationError(f'Unknown operation "{event.operation}"', event)
+		
+		# Phase Time Limit Operations
+		elif 'countdown' == event.timerType:
+			if 'start' == event.operation:
+				self.start_phase_countdown(participant, event)
+			elif 'stop' == event.operation:
+				self.stop_phase_countdown(participant, event)
+			else:
+				raise LogValidationError(f'Unknown timer operation {event.operation}')
+		else:
+			raise LogValidationError(f'Unknown timer type "{event.timerType}"')
 
 
 	def event_quali(self,
@@ -328,13 +339,14 @@ class LogEventValidator():
 			reload_location = statsParticipant.activePhase.phaseType + levelName
 			logging.warning(f'Participant {ui} reloaded the page at "{reload_location}"')
 			statsParticipant.reloads.append(reload_location)
-
+		
 		# If this is not a preload phase, start the phase as usual
 		else:
 			if event.timerName != statsParticipant.activePhase.phaseType:
-				raise LogValidationError(f'Currently active is {statsParticipant.activePhase.phaseType} but log asks for {event.timerName}')
+				if event.timerName == PhaseType.FinalScene:
+					raise LogValidationError(f'Currently active is {statsParticipant.activePhase.phaseType} but log asks for {event.timerName}')
 
-			statsParticipant.activePhase.start(event.timeClient)
+			statsParticipant.activePhase.start(time_start=event.timeClient, time_limit=event.limit)
 
 
 	def load_slide(self, event: ChronoEvent, statsParticipant: StatsParticipant):
@@ -378,12 +390,31 @@ class LogEventValidator():
 		statsParticipant.activePhase.activeLevel.stop(event.timeClient)
 
 
+	def start_phase_countdown(self, statsParticipant: StatsParticipant, event: ChronoEvent):
+		assert event.timeClient is not None
+		
+		statsParticipant.activePhase.start_phase_time_limit(event.timeClient)
+
+
+	def stop_phase_countdown(self, statsParticipant: StatsParticipant, event: ChronoEvent):
+		assert event.timeClient is not None
+		
+		if not isinstance(statsParticipant.activePhase, StatsPhaseLevels):
+			raise LogValidationError('Countdown event can only occur in phase with levels')
+		
+		statsParticipant.activePhase.stop_phase_time_limit(event.timeClient)
+
+
 	def click_continue(self,
 		statsParticipant: StatsParticipant,
 		event: ClickEvent
 	):
 		assert event.timeClient is not None
 		assert event.object == ClickableObjects.CONTINUE
+
+		if statsParticipant.activePhase.phaseType == PhaseType.AltTask:
+			logging.info('End of Phase AltTask')
+			return
 
 		# If it is a level continue
 		if isinstance(statsParticipant.activePhase, StatsPhaseLevels):

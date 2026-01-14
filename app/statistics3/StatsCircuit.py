@@ -27,7 +27,7 @@ class StatsCircuit(StatsSlide):
 		if self.status != CurrentLevelState.STARTED:
 			assert self.time_finish is not None
 			if (
-				self.status != CurrentLevelState.FINISHED or 
+				self.status not in [CurrentLevelState.FINISHED, CurrentLevelState.TIMEOUT] or 
 				(time_finish - self.time_finish).total_seconds() > TIME_TOLERANCE
 			):
 				raise LogValidationError(f'Cannot click confirm in {self.slide_type} with status {self.status}')
@@ -41,7 +41,7 @@ class StatsCircuit(StatsSlide):
 			self.status not in [CurrentLevelState.FINISHED, CurrentLevelState.SKIPPED, CurrentLevelState.TIMEOUT] or 
 			self.time_finish is None
 		):
-			raise LogValidationError(f'Level status is {self.status}, time_finish={self.time_finish}')
+			raise LogValidationError(f'Continue click on unfinished level, status={self.status}, time_finish={self.time_finish}')
 	
 
 	def skip(self, time_skip: TIMESTAMP_MS):

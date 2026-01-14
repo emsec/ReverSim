@@ -50,6 +50,11 @@ class StatsSlide:
 
 
 	def stop(self, time_finish: TIMESTAMP_MS):
+		if self.status == CurrentLevelState.TIMEOUT:
+			logging.debug('Stop after level timeouted')
+			assert self.time_finish is not None
+			return
+
 		if self.status != CurrentLevelState.STARTED:
 			raise LogValidationError(f'Cannot finish {self.slide_type} with status {self.status}')
 		assert self.time_start is not None, "Started means timestamp should have been set"
@@ -65,6 +70,11 @@ class StatsSlide:
 			if recorded_duration > allowed_duration:
 				logging.warning(f'Overtime {recorded_duration}, allowed was {allowed_duration} in {self.log_name}')
 				#raise LogValidationError(f'Overtime {recorded_duration}, allowed was {allowed_duration}')
+
+
+	def timeout(self, time_finish: TIMESTAMP_MS):
+		self.stop(time_finish)
+		self.status = CurrentLevelState.TIMEOUT
 
 
 	def click_continue(self, time_finish: TIMESTAMP_MS):

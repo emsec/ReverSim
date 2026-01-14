@@ -3,7 +3,6 @@ from enum import StrEnum
 
 from app.model.LogEvents import LogEvent
 
-
 type TIMESTAMP_MS = datetime
 
 TIME_TOLERANCE = 0.1 # seconds
@@ -27,6 +26,7 @@ class CurrentState(StrEnum):
 	LOADED = 'Loaded'
 	STARTED = 'In Progress'
 	FINISHED = 'Finished'
+	TIMEOUT = 'Timeout'
 
 
 class CurrentLevelState(StrEnum):
