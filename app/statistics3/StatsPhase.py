@@ -1,4 +1,5 @@
 
+from dataclasses import dataclass
 import logging
 from datetime import timedelta
 
@@ -10,21 +11,19 @@ from app.statistics3.statisticsUtils import (
 )
 from app.utilsGame import PhaseType
 
-
+@dataclass
 class StatsPhase:
+	phaseType: PhaseType
+	time_load: TIMESTAMP_MS
 
-	def __init__(self, type_phase: PhaseType, time_load: TIMESTAMP_MS) -> None:
-		self.phaseType = type_phase
+	time_start: TIMESTAMP_MS|None = None
+	time_start_levels: TIMESTAMP_MS|None = None
+	time_finish: TIMESTAMP_MS|None = None
 
-		self.time_load: TIMESTAMP_MS = time_load
-		self.time_start: TIMESTAMP_MS|None = None
-		self.time_start_levels: TIMESTAMP_MS|None = None
-		self.time_finish: TIMESTAMP_MS|None = None
+	time_limit: timedelta|None = None
 
-		self.time_limit: timedelta|None = None
-
-		self.status: CurrentState = CurrentState.LOADED
-		self.reloaded = False
+	status: CurrentState = CurrentState.LOADED
+	reloaded = False
 
 
 	def start(self, time_start: TIMESTAMP_MS, time_limit: float|None):

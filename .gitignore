@@ -12,6 +12,7 @@ instance/statistics/**
 
 # Don't track generated statistics
 *.csv
+statistics_*.json
 log_merging_config.json
 investigateLogs.py
 

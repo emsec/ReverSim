@@ -1,17 +1,15 @@
+from dataclasses import dataclass
 from typing import override
 from app.statistics3.StatsSlide import StatsSlide
 from app.statistics3.statisticsUtils import TIME_TOLERANCE, TIMESTAMP_MS, CurrentLevelState, LogValidationError
-from app.utilsGame import LevelType
 
 
+@dataclass
 class StatsCircuit(StatsSlide):
 
-	def __init__(self, type_slide: LevelType, log_name: str, time_load: TIMESTAMP_MS) -> None:
-		super().__init__(type_slide, log_name, time_load)
-
-		self.switchClicks: int = 0
-		self.minSwitchClicks: int|None = None
-		self.confirmClicks: int = 0
+	switchClicks: int = 0
+	minSwitchClicks: int|None = None
+	confirmClicks: int = 0
 
 
 	def click_switch(self):

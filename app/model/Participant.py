@@ -730,11 +730,13 @@ class Participant(db.Model, SanityVersion):
 
 		self.logger.writeToLog(EventType.Click, e, timeStamp)
 
+		LEVEL_INTRO_DRAWING = (LevelType.LEVEL, 'elementIntroduction/simple_circuit.txt')
+
 		event = SelectDrawToolEvent(
 			clientTime=timeStamp, serverTime=now(),
 			pseudonym=self.pseudonym,
 			phase=self.getPhaseName(),
-			level=self.getLevelContext(),
+			level=self.getLevelContext() if self.getPhase().hasLevels() else LEVEL_INTRO_DRAWING,
 			object=tool
 		)
 		event.commit()
