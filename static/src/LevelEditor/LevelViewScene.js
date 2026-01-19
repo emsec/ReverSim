@@ -10,12 +10,13 @@ class LevelViewScene extends BaseScene
 		const url = new URL(window.location.href);
 
 		this.showTextAnchors = true; // Show text anchor positions
-		this.showClues = true; // Highlight covert gates and switches with random initial state
-		this.showIDs = true; // Show the IDs of switches
+		this.showClues = url.searchParams.has('showClue'); // Highlight covert gates and switches with random initial state
+		this.showIDs = url.searchParams.has('showSwitchID'); // Show the IDs of switches
 		this.showWireLen = url.searchParams.has('showWireLen'); // Show the manhattan distance of wires
 		this.splittersAlwaysVisible = true;
 		this.enableLevelStats = false;
 		this.levelPath = null;
+		this.marginFac = url.searchParams.has('addMargin') ? 1 : 0; // Add the margin that is around every level in the game
 
 		this.state = {
 			wireStateVisible: true,
@@ -46,9 +47,6 @@ class LevelViewScene extends BaseScene
 		this.customSettings();
 		this.loadLevelFromQueryString();
 
-		// Make the screen print friendly
-		this.setBrightMode();
-
 		this.registerClickListener('Switch', this.onSwitchClicked);
 	}
 
@@ -57,6 +55,19 @@ class LevelViewScene extends BaseScene
 	 */
 	customSettings()
 	{
+		const searchParams = new URL(window.location.href).searchParams;
+
+		// Make the screen print friendly
+		if(!searchParams.has('darkMode'))
+			this.setBrightMode();
+		
+		// Visualize the simulation state
+		if(searchParams.has('hidePower'))
+		{
+			this.state.outputStateVisible = false;
+			this.state.wireStateVisible = false;
+		}
+
 		this.showTextAnchors = false;
 		this.splittersAlwaysVisible = false;
 		this.enableLevelStats = true;
@@ -151,8 +162,7 @@ class LevelViewScene extends BaseScene
 			else
 				this.circuit = new Circuit(this, this.levelFile.fileContent, this.splittersAlwaysVisible);
 
-			this.circuit.calculateOutputs();
-			this.circuit.wireDrawer.drawWires();
+			this.updateLevelState(false);
 
 			// Show the wire length if enabled
 			if(this.showWireLen)

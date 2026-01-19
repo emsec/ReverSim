@@ -1,5 +1,8 @@
-from datetime import datetime
+import dataclasses
+from datetime import datetime, timedelta
 from enum import StrEnum
+import json
+from typing import Any
 
 from app.model.LogEvents import LogEvent
 
@@ -36,3 +39,22 @@ class CurrentLevelState(StrEnum):
 	FINISHED = 'Finished'
 	SKIPPED = 'Skipped'
 	TIMEOUT = 'Timeout'
+
+
+class StatisticJSONEncoder(json.JSONEncoder):
+	def default(self, o: Any):
+		# Serialize StatsParticipant, StatsPhase etc.
+		if dataclasses.is_dataclass(o):
+			# type[dataclass] could theoretically slip through
+			return dataclasses.asdict(o) # type: ignore
+		
+		# Serialize datetime objects in ISO 8601
+		if isinstance(o, datetime):
+			return o.isoformat()
+		
+		# Serialize timedelta as a float in seconds
+		if isinstance(o, timedelta):
+			return o.total_seconds()
+
+		# Try the default handler
+		return super().default(o)

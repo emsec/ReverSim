@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import override
 
 from app.gameConfig import LEVEL_FILETYPES_WITH_TASK, PHASES_WITH_LEVELS
@@ -8,7 +9,11 @@ from app.statistics3.StatsSlide import StatsSlide
 from app.utilsGame import LevelType, PhaseType
 
 
+@dataclass
 class StatsPhaseLevels(StatsPhase):
+
+	levels: list[StatsSlide] = field(default_factory=list[StatsSlide])
+	levelIdx: int = -1
 
 	@property
 	def activeLevel(self) -> StatsSlide:
@@ -20,8 +25,8 @@ class StatsPhaseLevels(StatsPhase):
 		super().__init__(type_phase, time_load)
 		assert type_phase in PHASES_WITH_LEVELS
 
-		self.levels: list[StatsSlide] = []
-		self.levelIdx: int = -1
+		self.levels = []
+		self.levelIdx = -1
 	
 
 	def load_level(self, type_level: str, log_name: str, time_load: TIMESTAMP_MS):

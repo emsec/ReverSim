@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 
 from sqlalchemy.orm import Session
@@ -58,7 +59,8 @@ class LogEventValidator():
 				assert isinstance(event, ChronoEvent)
 				self.event_chrono(statsParticipant, player, event)
 			case StartSessionEvent.__tablename__:
-				pass
+				assert isinstance(event, StartSessionEvent)
+				self.event_start_session(statsParticipant, event)
 			case SkillAssessmentEvent.__tablename__:
 				pass
 			case QualiEvent.__tablename__:
@@ -204,6 +206,33 @@ class LogEventValidator():
 			raise LogValidationError(f'Unknown timer type "{event.timerType}"')
 
 
+	def event_start_session(self,
+		statsParticipant: StatsParticipant,
+		event: StartSessionEvent
+	):
+		assert event.timeClient is not None
+		assert event.phase is not None
+
+		# No need to set the page reload flag, if this is the first launch
+		if not statsParticipant.game_started:
+			statsParticipant.game_started = True
+			statsParticipant.start_time = event.timeClient
+			return
+
+		# Otherwise at this point this must be a page reload
+		statsParticipant.activePhase.reloaded = True
+		levelName = ''
+
+		if isinstance(statsParticipant.activePhase, StatsPhaseLevels):
+			statsParticipant.activePhase.activeLevel.reloaded = True
+			levelName = '@' + statsParticipant.activePhase.activeLevel.log_name
+
+		ui = getShortPseudo(statsParticipant.pseudonym)
+		reload_location = statsParticipant.activePhase.phaseType + levelName
+		logging.warning(f'Participant {ui} reloaded the page at "{reload_location}"')
+		statsParticipant.reloads.append(reload_location)
+
+
 	def event_quali(self,
 		statsParticipant: StatsParticipant,
 		event: QualiEvent
@@ -321,24 +350,14 @@ class LogEventValidator():
 		assert event.timeClient is not None
 		assert event.phase is not None
 
-		# Set the reload flag on page reload for phase and if applicable, also level
+		# Preload events follow directly after event_start_session
 		if event.phase.activePhase == PhaseType.Preload:
-			# No need to set the page reload flag, if this is the first launch
-			if not statsParticipant.game_started:
-				statsParticipant.game_started = True
-				return
-
-			statsParticipant.activePhase.reloaded = True
-			levelName = ''
-
-			if isinstance(statsParticipant.activePhase, StatsPhaseLevels):
-				statsParticipant.activePhase.activeLevel.reloaded = True
-				levelName = '@' + statsParticipant.activePhase.activeLevel.log_name
-
-			ui = getShortPseudo(statsParticipant.pseudonym)
-			reload_location = statsParticipant.activePhase.phaseType + levelName
-			logging.warning(f'Participant {ui} reloaded the page at "{reload_location}"')
-			statsParticipant.reloads.append(reload_location)
+			if not statsParticipant.game_started or statsParticipant.start_time is None:
+				raise LogValidationError('Preload Scene must follow directly after an event_start_phase')
+			
+			# The Preload event contains the time limit
+			if event.limit is not None:
+				statsParticipant.time_limit = timedelta(seconds=event.limit)
 		
 		# If this is not a preload phase, start the phase as usual
 		else:
@@ -413,7 +432,7 @@ class LogEventValidator():
 		assert event.object == ClickableObjects.CONTINUE
 
 		if statsParticipant.activePhase.phaseType == PhaseType.AltTask:
-			logging.info('End of Phase AltTask')
+			logging.debug('End of Phase AltTask') # TODO
 			return
 
 		# If it is a level continue
@@ -428,7 +447,7 @@ class LogEventValidator():
 
 		# Else this must be the end of a Phase
 		else:
-			logging.info(f'End of Phase {statsParticipant.activePhase.phaseType}')
+			logging.debug(f'End of Phase {statsParticipant.activePhase.phaseType}') # TODO
 
 
 	def click_skip(self,

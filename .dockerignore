@@ -21,6 +21,7 @@ conf/
 log_merging_config.json
 dockerComposeMPI.yml
 *.csv
+statistics_*.json
 reversim-conf
 
 # Debugpy logs, WinMerge Backups etc.

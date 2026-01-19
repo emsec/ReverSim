@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 from datetime import timedelta
 
@@ -10,24 +11,20 @@ from app.statistics3.statisticsUtils import (
 from app.utilsGame import LevelType
 
 
+@dataclass
 class StatsSlide:
 
-	def __init__(self,
-		type_slide: LevelType,
-		log_name: str,
-		time_load: TIMESTAMP_MS
-	) -> None:
-		self.slide_type = type_slide
-		self.log_name = log_name
+	slide_type: LevelType
+	log_name: str
 
-		self.time_load: TIMESTAMP_MS = time_load
-		self.time_start: TIMESTAMP_MS|None = None
-		self.time_finish: TIMESTAMP_MS|None = None
+	time_load: TIMESTAMP_MS
+	time_start: TIMESTAMP_MS|None = None
+	time_finish: TIMESTAMP_MS|None = None
 
-		self.time_limit: timedelta|None = None
+	time_limit: timedelta|None = None
 
-		self.status: CurrentLevelState = CurrentLevelState.LOADED
-		self.reloaded = False
+	status: CurrentLevelState = CurrentLevelState.LOADED
+	reloaded = False
 
 
 	def start(self, time_start: TIMESTAMP_MS, time_limit: float|None):

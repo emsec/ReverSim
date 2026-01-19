@@ -1,9 +1,12 @@
 import argparse
+from datetime import datetime
+import json
 import logging
 import os
+from pathlib import Path
 from typing import Iterable
 
-from sqlalchemy import Engine, create_engine, func, select
+from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import Session
 
 import app.config as gameConfigLegacy
@@ -14,9 +17,13 @@ from app.model.LogEvents import GroupAssignmentEvent, LogEvent
 from app.model.Participant import Participant
 from app.statistics3.GameStateValidator import GameStateValidator
 from app.statistics3.LogEventValidator import LogEventValidator
-from app.statistics3.statisticsUtils import LogValidationError
+from app.statistics3.statisticsUtils import LogValidationError, StatisticJSONEncoder
 from app.statistics3.StatsParticipant import StatsParticipant
-from app.utilsGame import getShortPseudo
+from app.utilsGame import get_git_revision_hash, getShortPseudo
+
+
+
+
 
 # Flask uses an instance folder to store and load assets
 INSTANCE_FOLDER = os.path.abspath(os.environ.get('REVERSIM_INSTANCE', './instance'))
@@ -40,31 +47,41 @@ class StatisticsGenerator:
 		self.engine = database
 
 
-	def read_group(self, group: str, skip_debug: bool = True) -> Iterable[StatsParticipant]:
+	def read_group(self, group: str, skip_debug: bool = True, start_time: datetime|None = None) -> Iterable[StatsParticipant]:
 		logging.info(f'Querying all participants for group {group}')
 
 		with Session(self.engine) as session:
+			stmt = select(GroupAssignmentEvent.pseudonym).where(
+				GroupAssignmentEvent.group == group
+			)
+
 			if skip_debug:
-				stmt = select(GroupAssignmentEvent.pseudonym).where(
-					GroupAssignmentEvent.group == group
-				)
-			else:
-				stmt = select(GroupAssignmentEvent.pseudonym).where(
-					GroupAssignmentEvent.group == group and 
-					GroupAssignmentEvent.isDebug == False  # noqa: E712
-				)
+				stmt = stmt.where(GroupAssignmentEvent.isDebug == False) # noqa: E712
+
+			if start_time is not None:
+				stmt = stmt.where(GroupAssignmentEvent.timeServer >= start_time)
+			
 
 			expected_pseudonyms: list[str] = list(session.scalars(stmt))
 			valid_pseudonyms: list[str] = []
 
 			for pseudonym in expected_pseudonyms:
 				try:
-					participant = self.read_participant(session, pseudonym)
+					player = session.get_one(Participant, pseudonym)
+
+					# Drop all players that have not started the game
+					if not player.startedGame:
+						expected_pseudonyms.remove(player.pseudonym)
+						continue
+
+					participant = self.read_participant(session, player)
 					valid_pseudonyms.append(pseudonym)
 					yield participant
+
 				except LogValidationError as e:
 					lineInfo = (f'#{e.event.id}' if e.event is not None else '')
 					logging.error(f'{getShortPseudo(pseudonym)}{lineInfo} is invalid: "{e}"')
+
 				except AssertionError as e:
 					logging.error(f'Something went wrong while parsing {pseudonym}: "{e}"')
 
@@ -72,9 +89,11 @@ class StatisticsGenerator:
 			logging.info(f'{len(valid_pseudonyms)} of {len(expected_pseudonyms)} player logs passed validation')
 
 	
-	def read_participant(self, session: Session, pseudonym: str) -> StatsParticipant:
-		statsParticipant = StatsParticipant(pseudonym, self.is_debug(session, pseudonym))
-		player = session.get_one(Participant, pseudonym)
+	def read_participant(self, session: Session, player: Participant) -> StatsParticipant:
+		statsParticipant = StatsParticipant(
+			pseudonym=player.pseudonym,
+			is_debug=player.isDebug
+		)
 
 		events = session.execute(
 			statement=select(LogEvent).where(LogEvent.pseudonym == statsParticipant.pseudonym)
@@ -83,7 +102,7 @@ class StatisticsGenerator:
 		log_validator = LogEventValidator()
 		state_validator = GameStateValidator()
 
-		logging.info(f'Validating {getShortPseudo(pseudonym)}')
+		logging.info(f'Validating {getShortPseudo(player.pseudonym)}')
 		for event in events:
 			try:
 				log_validator.handle_event(event, session, statsParticipant, player)
@@ -99,26 +118,15 @@ class StatisticsGenerator:
 		return statsParticipant
 
 
-	@staticmethod
-	def is_debug(session: Session, pseudonym: str):
-		result = session.execute(
-			select(func.count()).where(
-				GroupAssignmentEvent.pseudonym == pseudonym and
-				GroupAssignmentEvent.isDebug
-			)
-		).scalar_one()
-
-		return result > 0
-
-
 def main():
 
 	parser = argparse.ArgumentParser(description="A script to aggregate the logfiles from the ReverSim game into a csv file.")
 	parser.add_argument('-i', '--instance-path', help='', default=INSTANCE_FOLDER)
 	parser.add_argument("-o", "--output", help="The filename of the output statistic csv file", default='statistics.csv')
-	parser.add_argument("-s", "--skipScreenshots", help="Skip the screenshot validation", action="store_true")
+	#parser.add_argument("-s", "--skipScreenshots", help="Skip the screenshot validation", action="store_true")
 	parser.add_argument("-d", "--allowDebug", help="Allow debug groups to end up in the output", action="store_true")
 	parser.add_argument("-l", "--log", metavar='LEVEL', help="Specify the log level, must be one of DEBUG, INFO, WARNING, ERROR or CRITICAL", default="INFO")
+	parser.add_argument('-b', '--beginning', help='Only include logs that start after this date in ISO 8601 format, e.g. 2026-01-15', default=None)
 	
 	args = parser.parse_args()
 
@@ -138,22 +146,51 @@ def main():
 	# Load the GameConfig
 	gameConfig = GameConfig(
 		configName=CONFIG_NAME,
-		instanceFolder=INSTANCE_FOLDER
+		instanceFolder=args.instance_path
 	)
 	gameConfigLegacy.setGameConfig(gameConfig)
 	
 
 	# Load the Level Loader
-	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=INSTANCE_FOLDER)
+	JsonLevelList.singleton = JsonLevelList.fromFile(instanceFolder=args.instance_path)
 
 	# Open the Database
-	database_path = os.path.join(INSTANCE_FOLDER, DATABASE_PATH)
+	database_path = os.path.join(args.instance_path, DATABASE_PATH)
 	engine = (create_engine("sqlite:///" + database_path, echo=False)
 		.execution_options(sqlite_readonly = True))
-
-	statsGenerator = StatisticsGenerator(INSTANCE_FOLDER, gameConfig, JsonLevelList, engine)
-	data = list(statsGenerator.read_group('cognitive_obfuscation'))
 	
+	try:
+		if args.beginning is not None and len(args.beginning.strip()) > 0:
+			start_time = datetime.fromisoformat(args.beginning.strip())
+		else:
+			start_time = None
+	except Exception as e:
+		logging.error(e)
+		return
+
+	statsGenerator = StatisticsGenerator(args.instance_path, gameConfig, JsonLevelList, engine)
+	data = list(statsGenerator.read_group(
+		group='cognitive_obfuscation',
+		skip_debug=not args.allowDebug,
+		start_time=start_time
+	))
+	
+	gitHash = None
+	try:
+		gitHash = get_git_revision_hash(shortHash=True)
+	except Exception as e:
+		logging.warning('Could not determine git hash: ' + str(e))
+
+	now = datetime.now()
+	data_json = json.dumps({
+		'time': now,
+		'gitHash': gitHash,
+		'participants': data,
+		'args': vars(args),
+		'instance': INSTANCE_FOLDER,
+	}, cls=StatisticJSONEncoder, indent=4)
+
+	Path(f'statistics_{now.strftime('%Y-%m-%d_%H%M')}.json').write_text(data_json, encoding='UTF-8')
 
 if __name__ == '__main__':
 	main()

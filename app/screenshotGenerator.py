@@ -249,8 +249,16 @@ def screenshotLevel(page: Page, levelName: str):
 		#	print(f'Skipping: "{outputPath}"')
 		#	return
 
-		quotedLevelName = urllib.parse.quote_plus(currentLevel)
-		page.goto(f'{base_url}/game?group=viewer&lang=en&ui={pseudonym}&level={quotedLevelName}')
+		query_string = urllib.parse.urlencode({
+			'group': 'viewer',
+			'lang': 'en',
+			'showSwitchID': '',
+			'showClues': '',
+			'ui': pseudonym,
+			'level': currentLevel,
+		})
+
+		page.goto(f'{base_url}/game?' + query_string)
 		page.wait_for_timeout(1000)
 
 		downloadCanvasImage(page, outputName=outputPath)
