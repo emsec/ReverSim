@@ -22,6 +22,8 @@ class StatsParticipant:
 	game_started: bool = False
 	reloads: list[str] = field(default_factory=list[str])
 
+	start_time: TIMESTAMP_MS|None = None
+	finish_time: TIMESTAMP_MS|None = None
 	time_limit: timedelta|None = None
 
 	@property

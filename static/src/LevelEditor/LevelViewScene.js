@@ -55,11 +55,18 @@ class LevelViewScene extends BaseScene
 	 */
 	customSettings()
 	{
-		const url = new URL(window.location.href);
+		const searchParams = new URL(window.location.href).searchParams;
 
 		// Make the screen print friendly
-		if(!url.searchParams.has('darkMode'))
+		if(!searchParams.has('darkMode'))
 			this.setBrightMode();
+		
+		// Visualize the simulation state
+		if(searchParams.has('hidePower'))
+		{
+			this.state.outputStateVisible = false;
+			this.state.wireStateVisible = false;
+		}
 
 		this.showTextAnchors = false;
 		this.splittersAlwaysVisible = false;
@@ -155,8 +162,7 @@ class LevelViewScene extends BaseScene
 			else
 				this.circuit = new Circuit(this, this.levelFile.fileContent, this.splittersAlwaysVisible);
 
-			this.circuit.calculateOutputs();
-			this.circuit.wireDrawer.drawWires();
+			this.updateLevelState(false);
 
 			// Show the wire length if enabled
 			if(this.showWireLen)

@@ -160,8 +160,8 @@ def main():
 		.execution_options(sqlite_readonly = True))
 	
 	try:
-		if args.beginning is not None and len(args.beginning) > 0:
-			start_time = datetime.fromisoformat(args.beginning)
+		if args.beginning is not None and len(args.beginning.strip()) > 0:
+			start_time = datetime.fromisoformat(args.beginning.strip())
 		else:
 			start_time = None
 	except Exception as e:
