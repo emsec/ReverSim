@@ -432,7 +432,7 @@ class LogEventValidator():
 		assert event.object == ClickableObjects.CONTINUE
 
 		if statsParticipant.activePhase.phaseType == PhaseType.AltTask:
-			logging.info('End of Phase AltTask')
+			logging.debug('End of Phase AltTask') # TODO
 			return
 
 		# If it is a level continue
@@ -447,7 +447,7 @@ class LogEventValidator():
 
 		# Else this must be the end of a Phase
 		else:
-			logging.info(f'End of Phase {statsParticipant.activePhase.phaseType}')
+			logging.debug(f'End of Phase {statsParticipant.activePhase.phaseType}') # TODO
 
 
 	def click_skip(self,
