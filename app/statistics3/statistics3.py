@@ -61,19 +61,19 @@ class StatisticsGenerator:
 			if start_time is not None:
 				stmt = stmt.where(GroupAssignmentEvent.timeServer >= start_time)
 			
-
-			expected_pseudonyms: list[str] = list(session.scalars(stmt))
+			loaded_pseudonyms: list[str] = list(session.scalars(stmt))
+			expected_pseudonyms: list[str] = []
 			valid_pseudonyms: list[str] = []
 
-			for pseudonym in expected_pseudonyms:
+			for pseudonym in loaded_pseudonyms:
 				try:
 					player = session.get_one(Participant, pseudonym)
 
 					# Drop all players that have not started the game
 					if not player.startedGame:
-						expected_pseudonyms.remove(player.pseudonym)
 						continue
-
+					
+					expected_pseudonyms.append(pseudonym)
 					participant = self.read_participant(session, player)
 					valid_pseudonyms.append(pseudonym)
 					yield participant
