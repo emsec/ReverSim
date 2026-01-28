@@ -9,7 +9,7 @@ from app.statistics3.StatsCircuit import StatsCircuit
 from app.statistics3.StatsParticipant import StatsParticipant
 from app.statistics3.StatsPhase import StatsPhase
 from app.statistics3.StatsPhaseLevels import StatsPhaseLevels
-from app.statistics3.statisticsUtils import TIME_TOLERANCE, LogValidationError
+from app.statistics3.statisticsUtils import TIME_TOLERANCE, CurrentLevelState, LogValidationError
 
 class GameStateValidator:
 	"""
@@ -77,7 +77,17 @@ class GameStateValidator:
 			if (stats_start - db_level_start).total_seconds() > TIME_TOLERANCE:
 				raise LogValidationError(f'Start Time {stats_start}(stats) != {db_level_start}(db)')
 		
+		# Check that the Slide finish times in gamestate and statistics match
 		if stats_level.time_finish is not None:
-			stats_finish = stats_level.time_finish.replace(tzinfo=timezone.utc)
-			if (stats_finish - db_level_finish).total_seconds() > TIME_TOLERANCE:
-				raise LogValidationError(f'Finish Time {stats_finish}(stats) != {db_level_finish}(db)')
+			# The game will not send an end time if the level timeouted. Otherwise a 
+			# missing time end would be an error
+			if (gamestate_level.timeFinished < 0 and 
+				stats_level.status is not CurrentLevelState.TIMEOUT
+			):
+				raise LogValidationError(f'{gamestate_level.timeFinished}(db) < 0')
+			
+			# So gamestate_level.timeFinished should be valid and matching the stats
+			if gamestate_level.timeFinished > 0:
+				stats_finish = stats_level.time_finish.replace(tzinfo=timezone.utc)
+				if (stats_finish - db_level_finish).total_seconds() > TIME_TOLERANCE:
+					raise LogValidationError(f'Finish Time {stats_finish}(stats) != {db_level_finish}(db)')

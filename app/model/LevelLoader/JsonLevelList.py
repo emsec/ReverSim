@@ -161,6 +161,6 @@ class JsonLevelList(LevelLoader):
 			return conf
 			
 		except Exception as e:
-			logging.info(f'No level lists loaded from "{fileName}".')
+			logging.error(f'No level lists loaded from "{fileName}".')
 			logging.debug(e)
 			return {}

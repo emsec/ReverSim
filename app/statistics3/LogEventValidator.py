@@ -361,9 +361,18 @@ class LogEventValidator():
 		
 		# If this is not a preload phase, start the phase as usual
 		else:
-			if event.timerName != statsParticipant.activePhase.phaseType:
-				if event.timerName == PhaseType.FinalScene:
-					raise LogValidationError(f'Currently active is {statsParticipant.activePhase.phaseType} but log asks for {event.timerName}')
+			# If the timerName does not match the currently active phase this is an error
+			# Only exemption: FinalScene 
+			if (event.timerName != statsParticipant.activePhase.phaseType and
+				event.timerName != PhaseType.FinalScene
+			):
+				raise LogValidationError(f'Currently active is {statsParticipant.activePhase.phaseType} but log asks for {event.timerName}')
+			
+			# Special Case: Insert missing Load Final Scene
+			if (PhaseType.FinalScene == event.timerName and 
+	   			PhaseType.FinalScene != statsParticipant.activePhase.phaseType
+			):
+				statsParticipant.load_phase(PhaseType.FinalScene, event.timeClient)
 
 			statsParticipant.activePhase.start(time_start=event.timeClient, time_limit=event.limit)
 

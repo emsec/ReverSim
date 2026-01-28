@@ -21,10 +21,6 @@ from app.statistics3.statisticsUtils import LogValidationError, StatisticJSONEnc
 from app.statistics3.StatsParticipant import StatsParticipant
 from app.utilsGame import get_git_revision_hash, getShortPseudo
 
-
-
-
-
 # Flask uses an instance folder to store and load assets
 INSTANCE_FOLDER = os.path.abspath(os.environ.get('REVERSIM_INSTANCE', './instance'))
 
@@ -32,6 +28,8 @@ INSTANCE_FOLDER = os.path.abspath(os.environ.get('REVERSIM_INSTANCE', './instanc
 CONFIG_NAME = os.environ.get('REVERSIM_CONFIG', 'conf/gameConfig.json')
 DATABASE_PATH = os.environ.get('REVERSIM_DATABASE', 'statistics/reversim.db')
 
+start_time: datetime = datetime.now()
+error_pseudonyms: dict[str, str] = {}
 
 class StatisticsGenerator:
 	def __init__(self, 
@@ -79,11 +77,14 @@ class StatisticsGenerator:
 					yield participant
 
 				except LogValidationError as e:
-					lineInfo = (f'#{e.event.id}' if e.event is not None else '')
+					eventID: int|None = e.event.id if e.event is not None else None
+					lineInfo = (f'#{eventID}' if eventID is not None else '')
 					logging.error(f'{getShortPseudo(pseudonym)}{lineInfo} is invalid: "{e}"')
+					error_pseudonyms[pseudonym] = f'{eventID}: "{e}"'
 
 				except AssertionError as e:
 					logging.error(f'Something went wrong while parsing {pseudonym}: "{e}"')
+					error_pseudonyms[pseudonym] = f'Assertion: "{e}"'
 
 			logging.info(' ------------ ')
 			logging.info(f'{len(valid_pseudonyms)} of {len(expected_pseudonyms)} player logs passed validation')
@@ -181,16 +182,18 @@ def main():
 	except Exception as e:
 		logging.warning('Could not determine git hash: ' + str(e))
 
-	now = datetime.now()
+	end_time = datetime.now()
 	data_json = json.dumps({
-		'time': now,
+		'start_time': start_time,
+		'end_time': end_time,
 		'gitHash': gitHash,
-		'participants': data,
 		'args': vars(args),
 		'instance': INSTANCE_FOLDER,
+		'participants': data,
+		'errors': error_pseudonyms
 	}, cls=StatisticJSONEncoder, indent=4)
 
-	Path(f'statistics_{now.strftime('%Y-%m-%d_%H%M')}.json').write_text(data_json, encoding='UTF-8')
+	Path(f'statistics_{end_time.strftime('%Y-%m-%d_%H%M')}.json').write_text(data_json, encoding='UTF-8')
 
 if __name__ == '__main__':
 	main()

@@ -23,6 +23,9 @@ class StatsCircuit(StatsSlide):
 		# Confirm can only be clicked on an unsolved level, with the exception of the event
 		# coming at the same time as the chrono stop event
 		if self.status != CurrentLevelState.STARTED:
+			if self.time_finish is None:
+				raise LogValidationError(f'Got Confirm click but time_finish is still None in {self.log_name}')
+
 			assert self.time_finish is not None
 			if (
 				self.status not in [CurrentLevelState.FINISHED, CurrentLevelState.TIMEOUT] or 
@@ -43,7 +46,7 @@ class StatsCircuit(StatsSlide):
 	
 
 	def skip(self, time_skip: TIMESTAMP_MS):
-		if self.status != CurrentLevelState.STARTED:
+		if self.status not in [CurrentLevelState.STARTED, CurrentLevelState.TIMEOUT]:
 			raise LogValidationError(f'Cannot skip {self.slide_type} with status {self.status}')
 
 		self.status = CurrentLevelState.SKIPPED
