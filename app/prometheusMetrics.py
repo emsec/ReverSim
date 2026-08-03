@@ -2,7 +2,7 @@ import logging
 from threading import Thread
 import time
 from typing import Any
-from flask import Flask
+from flask import Flask, Request
 
 # Prometheus Metrics
 from flask.ctx import AppContext
@@ -11,6 +11,28 @@ from prometheus_flask_exporter.multiprocess import UWsgiPrometheusMetrics  # typ
 
 from app.gameConfig import METRIC_UPDATE_INTERVAL, LOGFILE_VERSION
 import app.storage.participantsDict as participantsDict
+
+
+# The `path` label value reported for requests that did not match any URL rule (e.g. a
+# request with a method the matched rule does not allow). This server faces the public
+# internet and is constantly scanned by bots probing nonexistent URLs; without folding
+# those into a single label value, every probed URL would create its own Prometheus time
+# series and the metrics would grow without bound.
+UNMATCHED_URL_LABEL = '<unmatched>'
+
+
+def groupByUrlRule(req: Request) -> str:
+	"""Group the default HTTP metrics by the matched URL rule (e.g.
+	`/assets/<path:filename>`) instead of by the raw request path, which keeps the label
+	cardinality bounded by the number of routes this app has."""
+	rule = req.url_rule
+	return rule.rule if rule is not None else UNMATCHED_URL_LABEL
+
+
+# NOTE prometheus_flask_exporter takes the *name* of the metric label from the grouping
+# function's `__name__`. Keep it `path` so it stays identical to the library default and
+# the existing Grafana dashboards keep working.
+groupByUrlRule.__name__ = 'path'
 
 
 class ServerMetrics:
@@ -22,6 +44,7 @@ class ServerMetrics:
 		try:
 			metrics = UWsgiPrometheusMetrics.for_app_factory( # type: ignore
 				excluded_paths=EXCLUDED_PATHS,
+				group_by=groupByUrlRule,
 				metrics_decorator=auth_provider
 			)
 
@@ -31,6 +54,7 @@ class ServerMetrics:
 
 			metrics = PrometheusMetrics.for_app_factory( # type: ignore
 				excluded_paths=EXCLUDED_PATHS,
+				group_by=groupByUrlRule,
 				metrics_decorator=auth_provider
 			)
 
